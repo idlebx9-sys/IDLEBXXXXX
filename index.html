@@ -31,7 +31,7 @@
           السلة <span class="cart-badge" id="cartBadge">0</span>
         </a>
         <a href="#wallet" onclick="showPage('wallet')">المحفظة</a>
-        <a href="#about" onclick="showPage('about')">عنا</a> </a>
+        <a href="#about" onclick="showPage('about')">عنا</a>
         <a href="#login" onclick="showPage('login')" id="loginNavBtn">تسجيل الدخول</a>
         <span id="userBalance" class="user-balance hidden">الرصيد: <b id="balanceAmount">0</b></span>
         <button id="logoutBtn" class="btn-logout hidden" onclick="logout()">خروج</button>
@@ -125,10 +125,10 @@
           <div class="sham-cash-box">
             <h3>شحن عبر شام كاش</h3>
             <div class="wallet-image-box">
-              <img id="walletPaymentImage" src="" alt="https://i.postimg.cc/zG5BD2GS/IMG-20260817-WA0027.jpg" class="wallet-payment-image">
+              <img id="walletPaymentImage" src="" alt="صورة الدفع" class="wallet-payment-image">
               <p class="wallet-code">بيانات المحفظة / الدفع</p>
               <div class="code-row">
-                <code id="shamCode">d9014910d7a2ce72f335950b72401c2f</code>
+                <code id="shamCode">SY-IDLEB-2025-SCASH</code>
                 <button class="btn btn-sm" onclick="copyShamCode()">نسخ</button>
               </div>
             </div>
@@ -161,8 +161,8 @@
       <div class="section owner-section">
         <div class="owner-card">
           <div class="owner-hero">
-            <img id="ownerPhoto" src="" alt="owner" class="owner-photo">
-            <span class="owner-badge">owner</span>
+            <img id="ownerPhoto" src="" alt="OWNER" class="owner-photo">
+            <span class="owner-badge">OWNER</span>
           </div>
           <div class="owner-info">
             <p class="eyebrow">IDLEB STORE</p>
@@ -317,7 +317,7 @@
           <div id="admin-orders" class="admin-tab-content">
             <div class="admin-table-wrap">
               <table class="admin-table" id="ordersTable">
-                <thead><tr><th>رقم الطلب</th><th>المستخدم</th><th>المنتجات</th><th>المجموع</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
+                <thead><tr><th>رقم الطلب</th><th>العميل</th><th>واتساب</th><th>الخدمات والتفاصيل</th><th>المجموع</th><th>الحالة</th><th>التاريخ</th><th>إجراءات</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -369,6 +369,33 @@
       </div>
     </section>
   </main>
+
+  <!-- DIRECT CHECKOUT MODAL -->
+  <div id="quickOrderModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="quickOrderTitle">
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeQuickOrder()" aria-label="إغلاق">×</button>
+      <div class="modal-head">
+        <span class="eyebrow">IDLEB STORE</span>
+        <h3 id="quickOrderTitle">شراء الخدمة</h3>
+        <p id="quickOrderSummary"></p>
+      </div>
+      <div id="quickOrderForm" class="quick-order-form"></div>
+      <div class="quick-order-total"><span>الإجمالي</span><strong id="quickOrderTotal">0 $</strong></div>
+      <button class="btn btn-primary btn-full" onclick="submitQuickOrder()">تأكيد الطلب والدفع</button>
+    </div>
+  </div>
+
+  <!-- ADMIN ORDER DETAILS MODAL -->
+  <div id="orderDetailsModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="orderDetailsTitle">
+    <div class="modal-card modal-wide">
+      <button class="modal-close" onclick="closeOrderDetails()" aria-label="إغلاق">×</button>
+      <div class="modal-head">
+        <span class="eyebrow">ORDER DETAILS</span>
+        <h3 id="orderDetailsTitle">تفاصيل الطلب</h3>
+      </div>
+      <div id="orderDetailsContent" class="order-details-content"></div>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="toast"></div>
