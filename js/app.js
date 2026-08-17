@@ -47,10 +47,10 @@
     { id: 'p13', name: 'رشق متابعين تيك توك', desc: 'متابعين مستقلين حسب الكمية', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 75, pricingNote: 'كل 1000 متابع = 2$' },
     { id: 'p14', name: 'رشق أعضاء تليجرام', desc: 'أعضاء مستقلون حسب الكمية', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 30, pricingNote: 'كل 1000 عضو = 2$' },
     // ألعاب
-    { id: 'p15', name: 'شحن ببجي', desc: 'شحن UC ببجي موبايل', price: 10, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 120 },
-    { id: 'p16', name: 'شحن لودو', desc: 'شحن عملات لودو ستار', price: 8, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 65 },
-    { id: 'p17', name: 'شحن جواكر', desc: 'شحن عملات جواكر', price: 7, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 48 },
-    { id: 'p18', name: 'شحن فري فاير', desc: 'شحن جواهر فري فاير', price: 9, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 95 }
+    { id: 'p15', name: 'شحن ببجي', desc: 'شحن UC ببجي موبايل', price: 10, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 120, pricingNote: 'كل 1 وحدة = 10$' },
+    { id: 'p16', name: 'شحن لودو', desc: 'شحن عملات لودو ستار', price: 8, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 65, pricingNote: 'كل 1 وحدة = 8$' },
+    { id: 'p17', name: 'شحن جواكر', desc: 'شحن عملات جواكر', price: 7, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 48, pricingNote: 'كل 1 وحدة = 7$' },
+    { id: 'p18', name: 'شحن فري فاير', desc: 'شحن جواهر فري فاير', price: 9, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 95, pricingNote: 'كل 1 وحدة = 9$' }
   ];
 
   const DEFAULT_SETTINGS = {
@@ -201,6 +201,7 @@
     if (pageId === 'home') renderHome();
     if (pageId === 'categories') renderCategories();
     if (pageId === 'category' && param) renderCategoryProducts(param);
+    if (pageId === 'product-detail' && param) renderProductDetail(param);
     if (pageId === 'cart') renderCart();
     if (pageId === 'about') renderAbout();
     if (pageId === 'wallet') {
@@ -221,6 +222,8 @@
     // update hash without reload
     if (pageId === 'category' && param) {
       history.replaceState(null, '', '#category/' + param);
+    } else if (pageId === 'product-detail' && param) {
+      history.replaceState(null, '', '#product/' + param);
     } else if (pageId !== 'home') {
       history.replaceState(null, '', '#' + pageId);
     } else {
@@ -251,25 +254,16 @@
 
   function productCardHTML(p) {
     const boost = ['boost_followers','boost_engagement','boost_views'].includes(p.type);
-    const unit = Number(p.unitSize || 1000);
     const price = Number(p.price || 0);
     return `
-      <div class="product-card">
+      <div class="product-card product-card-simple" onclick="openProductDetail('${p.id}')">
         <img src="${p.image || placeholderImg(p.name)}" alt="${p.name}" loading="lazy">
         <div class="card-body">
           <span class="product-type">${typeLabel(p.type)}</span>
           <h3>${p.name}</h3>
           <p>${p.desc || ''}</p>
-          ${p.pricingNote ? `<div class="pricing-note">${p.pricingNote}</div>` : ''}
-          ${boost ? `
-            <div class="quantity-box">
-              <label>الكمية المطلوبة</label>
-              <input type="number" min="${unit}" step="${unit}" value="${unit}" id="qty-${p.id}" oninput="updateBoostPrice('${p.id}', ${price}, ${unit})">
-              <small id="price-${p.id}">السعر: ${formatPrice(price)}</small>
-            </div>` : `
-            <div class="product-price">${formatPrice(price)}</div>`}
-          <button class="btn btn-primary btn-full" onclick="openQuickOrder('${p.id}')">شراء الآن</button>
-          <button class="btn btn-secondary btn-full cart-secondary-btn" onclick="addToCart('${p.id}')">أضف إلى السلة</button>
+          ${p.pricingNote ? `<div class="pricing-note">${p.pricingNote}</div>` : `<div class="product-price">ابتداءً من ${formatPrice(price)}</div>`}
+          <button class="btn btn-primary btn-full" onclick="event.stopPropagation(); openProductDetail('${p.id}')">عرض التفاصيل والطلب</button>
         </div>
       </div>
     `;
@@ -297,15 +291,200 @@
     `).join('');
   }
 
+  function getPlatformName(name) {
+    const n = String(name || '').toLowerCase();
+    if (n.includes('انستغرام') || n.includes('instagram')) return 'انستغرام';
+    if (n.includes('تيك توك') || n.includes('tiktok')) return 'تيك توك';
+    if (n.includes('تليجرام') || n.includes('telegram')) return 'تليجرام';
+    if (n.includes('فيسبوك') || n.includes('facebook')) return 'فيسبوك';
+    if (n.includes('يوتيوب') || n.includes('youtube')) return 'يوتيوب';
+    return String(name || '').replace(/^رشق\s*/,'').replace(/(متابعين|تفاعل|مشاهدات|اعضاء|إعجابات)/g,'').trim() || 'خدمة';
+  }
+
+  function platformTypeLabel(type) {
+    return ({boost_followers:'رشق متابعين', boost_engagement:'رشق تفاعل / لايكات', boost_views:'رشق مشاهدات'})[type] || typeLabel(type);
+  }
+
   function renderCategoryProducts(catId) {
     const cats = load(STORAGE.categories, []);
     const cat = cats.find(c => c.id === catId);
     document.getElementById('categoryTitle').textContent = cat ? cat.name : 'المنتجات';
     const prods = load(STORAGE.products, []).filter(p => p.categoryId === catId && p.active);
-    document.getElementById('categoryProducts').innerHTML = prods.length
+    const grid = document.getElementById('categoryProducts');
+
+    if (catId === 'cat3') {
+      const groups = [];
+      prods.forEach(p => {
+        const platform = getPlatformName(p.name);
+        if (!groups.some(g => g.platform === platform)) groups.push({platform, products: []});
+        groups.find(g => g.platform === platform).products.push(p);
+      });
+      grid.innerHTML = groups.length ? groups.map(g => {
+        const first = g.products[0];
+        const types = [...new Set(g.products.map(p => p.type))];
+        return `
+          <div class="category-card platform-card" onclick="openPlatformDetail('${g.platform}')">
+            <img src="${first.image || placeholderImg(g.platform)}" alt="${g.platform}" loading="lazy">
+            <div class="card-body">
+              <span class="product-type">خدمات ${g.platform}</span>
+              <h3>${g.platform}</h3>
+              <p>اختر نوع الخدمة أولاً، ثم أدخل الرابط والكمية ورقم الواتساب والتفاصيل.</p>
+              <div class="platform-chips">${types.map(t => `<span>${platformTypeLabel(t)}</span>`).join('')}</div>
+              <button class="btn btn-primary btn-full">اختيار ${g.platform}</button>
+            </div>
+          </div>`;
+      }).join('') : '<p class="empty-state">لا توجد خدمات رشق حالياً</p>';
+      return;
+    }
+
+    grid.innerHTML = prods.length
       ? prods.map(p => productCardHTML(p)).join('')
       : '<p class="empty-state">لا توجد منتجات في هذا القسم حالياً</p>';
   }
+
+  function getPlatformProducts(platform) {
+    return load(STORAGE.products, []).filter(p => p.active && p.categoryId === 'cat3' && getPlatformName(p.name) === platform);
+  }
+
+  window.openPlatformDetail = function(platform) {
+    const products = getPlatformProducts(platform);
+    if (!products.length) return toast('لا توجد خدمات لهذا المنتج حالياً', true);
+    const content = document.getElementById('productDetailContent');
+    content.innerHTML = `
+      <div class="detail-hero-card">
+        <div>
+          <span class="eyebrow">IDLEB STORE • ${platform}</span>
+          <h1>خدمات ${platform}</h1>
+          <p>اختر نوع الرشق أولاً، وبعدها ستظهر لك صفحة الطلب المبسطة لإضافة رقمك والرابط والكمية والتفاصيل.</p>
+        </div>
+      </div>
+      <h2 class="section-title detail-subtitle">اختر نوع الخدمة</h2>
+      <div class="service-choice-grid">
+        ${products.map(p => `
+          <button class="service-choice" onclick="selectDetailProduct('${p.id}')">
+            <span>${platformTypeLabel(p.type)}</span>
+            <strong>${p.name}</strong>
+            <small>${p.pricingNote || p.desc || 'اضغط للمتابعة'}</small>
+            <b>متابعة ←</b>
+          </button>`).join('')}
+      </div>
+      <div id="detailOrderFormWrap" class="detail-order-wrap hidden"></div>
+    `;
+    showPage('product-detail', 'platform-' + encodeURIComponent(platform));
+  };
+
+  window.openProductDetail = function(productId) {
+    const p = load(STORAGE.products, []).find(x => x.id === productId && x.active);
+    if (!p) return;
+    renderSingleProductDetail(p);
+    showPage('product-detail', productId);
+  };
+
+  window.selectDetailProduct = function(productId) {
+    const p = load(STORAGE.products, []).find(x => x.id === productId && x.active);
+    if (!p) return;
+    renderDetailOrderForm(p);
+  };
+
+  function renderProductDetail(param) {
+    if (String(param).startsWith('platform-')) {
+      const platform = decodeURIComponent(String(param).slice(9));
+      renderPlatformPage(platform);
+    } else {
+      const p = load(STORAGE.products, []).find(x => x.id === param && x.active);
+      if (p) renderSingleProductDetail(p);
+    }
+  }
+
+  function renderPlatformPage(platform) {
+    const products = getPlatformProducts(platform);
+    const content = document.getElementById('productDetailContent');
+    if (!products.length) { content.innerHTML = '<p class="empty-state">الخدمة غير متاحة حالياً</p>'; return; }
+    content.innerHTML = `
+      <div class="detail-hero-card">
+        <div><span class="eyebrow">IDLEB STORE • ${platform}</span><h1>خدمات ${platform}</h1><p>اختر نوع الخدمة أولاً، ثم عبّئ بيانات الطلب في نفس الصفحة.</p></div>
+      </div>
+      <h2 class="section-title detail-subtitle">اختر نوع الخدمة</h2>
+      <div class="service-choice-grid">${products.map(p => `<button class="service-choice" onclick="selectDetailProduct('${p.id}')"><span>${platformTypeLabel(p.type)}</span><strong>${p.name}</strong><small>${p.pricingNote || p.desc || ''}</small><b>متابعة ←</b></button>`).join('')}</div>
+      <div id="detailOrderFormWrap" class="detail-order-wrap hidden"></div>`;
+  }
+
+  function renderSingleProductDetail(p) {
+    const content = document.getElementById('productDetailContent');
+    content.innerHTML = `
+      <div class="detail-hero-card product-detail-head">
+        <img src="${p.image || placeholderImg(p.name)}" alt="${p.name}">
+        <div><span class="eyebrow">${typeLabel(p.type)}</span><h1>${p.name}</h1><p>${p.desc || ''}</p></div>
+      </div>
+      <div id="detailOrderFormWrap" class="detail-order-wrap"></div>`;
+    renderDetailOrderForm(p);
+  }
+
+  function renderDetailOrderForm(p) {
+    const wrap = document.getElementById('detailOrderFormWrap');
+    if (!wrap) return;
+    const boost = ['boost_followers','boost_engagement','boost_views'].includes(p.type);
+    const game = p.type === 'games';
+    const meta = targetMeta(p.type);
+    const unit = Number(p.unitSize || 1000);
+    wrap.classList.remove('hidden');
+    wrap.innerHTML = `
+      <div class="order-form-card">
+        <div class="order-form-heading"><div><span class="product-type">${typeLabel(p.type)}</span><h2>تفاصيل الطلب</h2></div><strong id="detailLiveTotal">${formatPrice(Number(p.price||0))}</strong></div>
+        <div class="detail-form-grid">
+          <div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label><input type="tel" id="detailWhatsapp" value="${currentUser?.whatsapp || ''}" placeholder="مثال: +9639xxxxxxxx" required></div>
+          <div class="form-group"><label>${meta.label} <span class="required">*</span></label><input type="${meta.kind}" id="detailTarget" placeholder="${meta.placeholder}" required></div>
+          ${(boost || game) ? `<div class="form-group"><label>${boost ? 'الكمية المطلوبة' : 'الكمية'} <span class="required">*</span></label><input type="number" id="detailQuantity" min="${unit}" step="${unit}" value="${unit}"><small class="field-hint">${p.pricingNote || `كل ${unit.toLocaleString('en-US')} = ${formatPrice(p.price)}`}</small></div>` : ''}
+          <div class="form-group detail-notes"><label>تفاصيل إضافية <small>(اختياري)</small></label><textarea id="detailNotes" rows="4" placeholder="اكتب أي تفاصيل تساعد الإدمن على تنفيذ الطلب"></textarea></div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" onclick="submitDetailOrder('${p.id}')">تأكيد الطلب</button>
+      </div>`;
+    bindDetailQuantity(p);
+    wrap.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  window.updateDetailTotal = function(productId) {
+    const p = load(STORAGE.products, []).find(x => x.id === productId);
+    const out = document.getElementById('detailLiveTotal');
+    const input = document.getElementById('detailQuantity');
+    if (!p || !out || !input) return;
+    const quantityBased = ['boost_followers','boost_engagement','boost_views','games'].includes(p.type);
+    if (!quantityBased) return;
+    const unit = Number(p.unitSize || 1);
+    let q = Math.max(unit, Number(input.value) || unit);
+    q = Math.ceil(q / unit) * unit;
+    input.value = q;
+    out.textContent = formatPrice((q / unit) * Number(p.price || 0));
+  };
+
+  function bindDetailQuantity(p) {
+    const input = document.getElementById('detailQuantity');
+    if (!input) return;
+    input.addEventListener('input', () => updateDetailTotal(p.id));
+    input.addEventListener('change', () => updateDetailTotal(p.id));
+    updateDetailTotal(p.id);
+  }
+
+  window.submitDetailOrder = function(productId) {
+    const p = load(STORAGE.products, []).find(x => x.id === productId && x.active);
+    if (!p) return;
+    if (!currentUser) { toast('سجّل الدخول أولاً لإرسال الطلب', true); showPage('login'); return; }
+    const whatsapp=(document.getElementById('detailWhatsapp')?.value||'').trim();
+    const target=(document.getElementById('detailTarget')?.value||'').trim();
+    const notes=(document.getElementById('detailNotes')?.value||'').trim();
+    if (!whatsapp || whatsapp.length < 6) return toast('رقم واتساب العميل إجباري', true);
+    if (!target) return toast('أدخل الرابط أو معرّف اللاعب', true);
+    if (URL_TYPES.includes(p.type)) { try { new URL(target); } catch { return toast('الرابط غير صالح', true); } }
+    let quantity=1,total=Number(p.price||0),unit=1;
+    if (['boost_followers','boost_engagement','boost_views'].includes(p.type)) { unit=Number(p.unitSize||1000); quantity=Math.max(unit,Number(document.getElementById('detailQuantity')?.value)||unit); quantity=Math.ceil(quantity/unit)*unit; total=(quantity/unit)*Number(p.price||0); }
+    else if (p.type === 'games') { unit=Number(p.unitSize||1); quantity=Math.max(unit,Number(document.getElementById('detailQuantity')?.value)||unit); quantity=Math.ceil(quantity/unit)*unit; total=(quantity/unit)*Number(p.price||0); }
+    if ((currentUser.balance||0) < total) { toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true); showPage('wallet'); return; }
+    currentUser.balance-=total; currentUser.whatsapp=whatsapp; saveUser(currentUser);
+    const order={id:uid('ord'),username:currentUser.username,whatsapp,total,status:'pending',createdAt:new Date().toISOString(),source:'product_detail',items:[{productId:p.id,name:p.name,serviceType:p.type,quantity,qty:1,unitSize:unit,unitPrice:Number(p.price||0),price:total,lineTotal:total,image:p.image||'',targetUrl:target,notes}],notes};
+    const orders=load(STORAGE.orders,[]); orders.push(order); save(STORAGE.orders,orders);
+    const products=load(STORAGE.products,[]); const saved=products.find(x=>x.id===p.id); if(saved)saved.sales=(saved.sales||0)+1; save(STORAGE.products,products);
+    updateUI(); document.getElementById('orderSuccessMsg').textContent=`تم إرسال الطلب ${order.id} بنجاح — واتساب: ${order.whatsapp} — المجموع: ${formatPrice(total)}`; showPage('order-success');
+  };
 
   // ========== Quick Purchase ==========
   const URL_TYPES = ['accounts','unban','boost_followers','boost_engagement','boost_views'];
@@ -317,9 +496,9 @@
   }
 
   function getProductQuantity(product) {
-    const boost = ['boost_followers','boost_engagement','boost_views'].includes(product.type);
-    const unit = Number(product.unitSize || 1000);
-    if (!boost) return { quantity: 1, total: Number(product.price || 0), unit };
+    const quantityBased = ['boost_followers','boost_engagement','boost_views','games'].includes(product.type);
+    const unit = Number(product.unitSize || 1);
+    if (!quantityBased) return { quantity: 1, total: Number(product.price || 0), unit };
     const input = document.getElementById('qty-' + product.id);
     let quantity = Math.max(unit, Number(input && input.value) || unit);
     quantity = Math.ceil(quantity / unit) * unit;
@@ -341,9 +520,11 @@
     document.getElementById('quickOrderTitle').textContent = p.name;
     document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة وسيتم إرسال الطلب مباشرة إلى لوحة التحكم.';
     document.getElementById('quickOrderTotal').textContent = formatPrice(q.total);
+    const quantityBased = ['boost_followers','boost_engagement','boost_views','games'].includes(p.type);
+    const quantityUnit = Number(p.unitSize || 1);
     document.getElementById('quickOrderForm').innerHTML = `
-      ${['boost_followers','boost_engagement','boost_views'].includes(p.type) ? `
-        <div class="form-group"><label>الكمية المطلوبة</label><input type="number" id="quickQuantity" min="${q.unit}" step="${q.unit}" value="${q.quantity}" oninput="updateQuickOrderTotal(${Number(p.price||0)}, ${q.unit})"></div>` : ''}
+      ${quantityBased ? `
+        <div class="form-group"><label>الكمية المطلوبة</label><input type="number" id="quickQuantity" min="${quantityUnit}" step="${quantityUnit}" value="${quantityBased ? q.quantity : quantityUnit}"><small class="field-hint">${p.pricingNote || `كل ${quantityUnit.toLocaleString('en-US')} = ${formatPrice(p.price)}`}</small></div>` : ''}
       <div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label><input type="tel" id="quickWhatsapp" value="${currentUser.whatsapp || ''}" placeholder="مثال: +9639xxxxxxxx" required></div>
       <div class="form-group"><label>${meta.label} <span class="required">*</span></label><input type="${meta.kind}" id="quickTarget" placeholder="${meta.placeholder}" required></div>
       <div class="form-group"><label>ملاحظات إضافية <small>(اختياري)</small></label><textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن"></textarea></div>
@@ -361,6 +542,14 @@
     document.getElementById('quickOrderTotal').textContent = formatPrice((q / unitSize) * unitPrice);
   };
 
+  document.addEventListener('input', (event) => {
+    if (event.target && event.target.id === 'quickQuantity') {
+      const productId = document.getElementById('quickProductId')?.value;
+      const p = load(STORAGE.products, []).find(x => x.id === productId);
+      if (p) updateQuickOrderTotal(Number(p.price || 0), Number(p.unitSize || 1));
+    }
+  });
+
   window.closeQuickOrder = function() { document.getElementById('quickOrderModal').classList.add('hidden'); };
 
   window.submitQuickOrder = function() {
@@ -376,8 +565,8 @@
     if (URL_TYPES.includes(p.type)) {
       try { new URL(target); } catch { return toast('رابط الحساب غير صالح', true); }
     }
-    const q = ['boost_followers','boost_engagement','boost_views'].includes(p.type)
-      ? (() => { let unit=Number(p.unitSize||1000), n=Math.max(unit,Number(document.getElementById('quickQuantity').value)||unit); n=Math.ceil(n/unit)*unit; return {quantity:n,total:(n/unit)*Number(p.price||0),unit}; })()
+    const q = ['boost_followers','boost_engagement','boost_views','games'].includes(p.type)
+      ? (() => { let unit=Number(p.unitSize||1), n=Math.max(unit,Number(document.getElementById('quickQuantity')?.value)||unit); n=Math.ceil(n/unit)*unit; return {quantity:n,total:(n/unit)*Number(p.price||0),unit}; })()
       : {quantity:1,total:Number(p.price||0),unit:1};
     if ((currentUser.balance || 0) < q.total) {
       toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
