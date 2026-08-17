@@ -268,7 +268,8 @@
               <small id="price-${p.id}">السعر: ${formatPrice(price)}</small>
             </div>` : `
             <div class="product-price">${formatPrice(price)}</div>`}
-          <button class="btn btn-primary btn-full" onclick="addToCart('${p.id}')">أضف إلى السلة</button>
+          <button class="btn btn-primary btn-full" onclick="openQuickOrder('${p.id}')">شراء الآن</button>
+          <button class="btn btn-secondary btn-full cart-secondary-btn" onclick="addToCart('${p.id}')">أضف إلى السلة</button>
         </div>
       </div>
     `;
@@ -306,6 +307,99 @@
       : '<p class="empty-state">لا توجد منتجات في هذا القسم حالياً</p>';
   }
 
+  // ========== Quick Purchase ==========
+  const URL_TYPES = ['accounts','unban','boost_followers','boost_engagement','boost_views'];
+
+  function targetMeta(type) {
+    if (URL_TYPES.includes(type)) return { label: 'رابط الحساب / المنشور', placeholder: 'https://instagram.com/...', kind: 'url', required: true };
+    if (type === 'games') return { label: 'معرّف اللاعب / ID', placeholder: 'أدخل ID اللاعب', kind: 'text', required: true };
+    return { label: 'بيانات التنفيذ', placeholder: 'اكتب أي معلومات يحتاجها الإدمن لتنفيذ الخدمة', kind: 'text', required: true };
+  }
+
+  function getProductQuantity(product) {
+    const boost = ['boost_followers','boost_engagement','boost_views'].includes(product.type);
+    const unit = Number(product.unitSize || 1000);
+    if (!boost) return { quantity: 1, total: Number(product.price || 0), unit };
+    const input = document.getElementById('qty-' + product.id);
+    let quantity = Math.max(unit, Number(input && input.value) || unit);
+    quantity = Math.ceil(quantity / unit) * unit;
+    return { quantity, total: (quantity / unit) * Number(product.price || 0), unit };
+  }
+
+  window.openQuickOrder = function(productId) {
+    if (!currentUser) {
+      toast('يجب تسجيل الدخول أولاً', true);
+      showPage('login');
+      return;
+    }
+    const products = load(STORAGE.products, []);
+    const p = products.find(x => x.id === productId && x.active);
+    if (!p) return;
+    const q = getProductQuantity(p);
+    const meta = targetMeta(p.type);
+    const modal = document.getElementById('quickOrderModal');
+    document.getElementById('quickOrderTitle').textContent = p.name;
+    document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة وسيتم إرسال الطلب مباشرة إلى لوحة التحكم.';
+    document.getElementById('quickOrderTotal').textContent = formatPrice(q.total);
+    document.getElementById('quickOrderForm').innerHTML = `
+      ${['boost_followers','boost_engagement','boost_views'].includes(p.type) ? `
+        <div class="form-group"><label>الكمية المطلوبة</label><input type="number" id="quickQuantity" min="${q.unit}" step="${q.unit}" value="${q.quantity}" oninput="updateQuickOrderTotal(${Number(p.price||0)}, ${q.unit})"></div>` : ''}
+      <div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label><input type="tel" id="quickWhatsapp" value="${currentUser.whatsapp || ''}" placeholder="مثال: +9639xxxxxxxx" required></div>
+      <div class="form-group"><label>${meta.label} <span class="required">*</span></label><input type="${meta.kind}" id="quickTarget" placeholder="${meta.placeholder}" required></div>
+      <div class="form-group"><label>ملاحظات إضافية <small>(اختياري)</small></label><textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن"></textarea></div>
+      <input type="hidden" id="quickProductId" value="${p.id}">
+    `;
+    modal.classList.remove('hidden');
+  };
+
+  window.updateQuickOrderTotal = function(unitPrice, unitSize) {
+    const input = document.getElementById('quickQuantity');
+    if (!input) return;
+    let q = Math.max(unitSize, Number(input.value) || unitSize);
+    q = Math.ceil(q / unitSize) * unitSize;
+    input.value = q;
+    document.getElementById('quickOrderTotal').textContent = formatPrice((q / unitSize) * unitPrice);
+  };
+
+  window.closeQuickOrder = function() { document.getElementById('quickOrderModal').classList.add('hidden'); };
+
+  window.submitQuickOrder = function() {
+    if (!currentUser) return closeQuickOrder();
+    const products = load(STORAGE.products, []);
+    const p = products.find(x => x.id === document.getElementById('quickProductId').value);
+    if (!p) return;
+    const whatsapp = document.getElementById('quickWhatsapp').value.trim();
+    const target = document.getElementById('quickTarget').value.trim();
+    const notes = document.getElementById('quickNotes').value.trim();
+    if (!whatsapp || whatsapp.length < 6) return toast('رقم واتساب العميل إجباري', true);
+    if (!target) return toast('أدخل بيانات الخدمة المطلوبة', true);
+    if (URL_TYPES.includes(p.type)) {
+      try { new URL(target); } catch { return toast('رابط الحساب غير صالح', true); }
+    }
+    const q = ['boost_followers','boost_engagement','boost_views'].includes(p.type)
+      ? (() => { let unit=Number(p.unitSize||1000), n=Math.max(unit,Number(document.getElementById('quickQuantity').value)||unit); n=Math.ceil(n/unit)*unit; return {quantity:n,total:(n/unit)*Number(p.price||0),unit}; })()
+      : {quantity:1,total:Number(p.price||0),unit:1};
+    if ((currentUser.balance || 0) < q.total) {
+      toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
+      closeQuickOrder();
+      showPage('wallet');
+      return;
+    }
+    currentUser.balance -= q.total;
+    currentUser.whatsapp = whatsapp;
+    saveUser(currentUser);
+    const order = {
+      id: uid('ord'), username: currentUser.username, whatsapp, total: q.total, status: 'pending', createdAt: new Date().toISOString(),
+      notes, source: 'quick_purchase',
+      items: [{ productId:p.id, name:p.name, serviceType:p.type, quantity:q.quantity, qty:1, unitSize:q.unit, unitPrice:Number(p.price||0), price:q.total, lineTotal:q.total, image:p.image||'', targetUrl:target, notes }]
+    };
+    const orders=load(STORAGE.orders,[]); orders.push(order); save(STORAGE.orders,orders);
+    p.sales=(p.sales||0)+1; save(STORAGE.products,products);
+    closeQuickOrder(); updateUI();
+    document.getElementById('orderSuccessMsg').textContent = `تم إرسال الطلب ${order.id} بنجاح — واتساب: ${order.whatsapp} — المجموع: ${formatPrice(order.total)}`;
+    showPage('order-success');
+  };
+
   // ========== Cart ==========
   window.addToCart = function (productId) {
     if (!currentUser) {
@@ -333,7 +427,7 @@
       existing.lineTotal = existing.qty * Number(p.price || 0);
     } else {
       cart.push({
-        productId, qty, name: p.name, price: linePrice, image: p.image,
+        productId, qty: 1, name: p.name, price: linePrice, lineTotal: linePrice, image: p.image,
         serviceType: p.type, unitSize, unitPrice: Number(p.price || 0), quantity: qty, targetUrl: ''
       });
     }
@@ -364,7 +458,7 @@
             <h4>${item.name}</h4>
             <div class="product-price">${formatPrice(item.lineTotal != null ? item.lineTotal : item.price * item.qty)}</div>
             ${item.quantity ? `<small>الكمية: ${Number(item.quantity).toLocaleString('en-US')}</small>` : ''}
-            ${['accounts','unban','boost_followers','boost_engagement','boost_views'].includes(item.serviceType) ? `<div class="form-group order-target-field"><label>رابط الحساب/المنشور <span class="required">*</span></label><input type="url" id="target-${idx}" value="${item.targetUrl || ''}" placeholder="https://..." required></div>` : ''}
+            ${(['accounts','unban','boost_followers','boost_engagement','boost_views'].includes(item.serviceType) || item.serviceType === 'games' || item.serviceType === 'other') ? `<div class="form-group order-target-field"><label>${targetMeta(item.serviceType).label} <span class="required">*</span></label><input type="${targetMeta(item.serviceType).kind}" id="target-${idx}" value="${item.targetUrl || ''}" placeholder="${targetMeta(item.serviceType).placeholder}" required></div>` : ''}
           </div>
           <div class="cart-item-actions">
             <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
@@ -401,76 +495,38 @@
   };
 
   window.checkout = function () {
-    if (!currentUser) {
-      toast('يجب تسجيل الدخول', true);
-      showPage('login');
-      return;
-    }
+    if (!currentUser) { toast('يجب تسجيل الدخول', true); showPage('login'); return; }
     if (!cart.length) return;
-
-    // Every order requires WhatsApp + target URL for applicable services.
     const whatsappEl = document.getElementById('orderWhatsapp');
     const whatsapp = (whatsappEl && whatsappEl.value || '').trim();
-    if (!whatsapp || whatsapp.length < 6) {
-      toast('رقم واتساب إجباري لإتمام الطلب', true);
-      whatsappEl && whatsappEl.focus();
-      return;
-    }
+    if (!whatsapp || whatsapp.length < 6) { toast('رقم واتساب إجباري لإتمام الطلب', true); whatsappEl && whatsappEl.focus(); return; }
 
     let normalizedCart;
     try {
       normalizedCart = cart.map((item, index) => {
-        const needsUrl = ['accounts','unban','boost_followers','boost_engagement','boost_views'].includes(item.serviceType);
+        const needsTarget = URL_TYPES.includes(item.serviceType);
         let targetUrl = item.targetUrl || '';
-        if (needsUrl) {
+        if (needsTarget || item.serviceType === 'games' || item.serviceType === 'other') {
           const field = document.getElementById('target-' + index);
           targetUrl = (field && field.value || '').trim();
           if (!targetUrl) throw new Error('missing-target');
+          if (needsTarget) { try { new URL(targetUrl); } catch { throw new Error('bad-url'); } }
         }
-        return {...item, targetUrl};
+        const lineTotal = Number(item.lineTotal != null ? item.lineTotal : item.price * item.qty);
+        return {...item, targetUrl, lineTotal, notes: item.notes || ''};
       });
-    } catch {
-      toast('أدخل رابط الحساب/المنشور لكل خدمة مطلوبة', true);
+    } catch (err) {
+      toast(err && err.message === 'bad-url' ? 'أحد الروابط غير صالح' : 'أدخل بيانات التنفيذ لكل خدمة', true);
       return;
     }
-
-    let total = normalizedCart.reduce((s, i) => s + Number(i.lineTotal != null ? i.lineTotal : i.price * i.qty), 0);
-    if ((currentUser.balance || 0) < total) {
-      toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
-      showPage('wallet');
-      return;
-    }
-
-    currentUser.balance -= total;
-    currentUser.whatsapp = whatsapp.trim();
-    saveUser(currentUser);
-
-    const orders = load(STORAGE.orders, []);
-    const order = {
-      id: uid('ord'),
-      username: currentUser.username,
-      whatsapp: whatsapp.trim(),
-      items: normalizedCart,
-      total,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
-    orders.push(order);
-    save(STORAGE.orders, orders);
-
-    const products = load(STORAGE.products, []);
-    normalizedCart.forEach(item => {
-      const p = products.find(x => x.id === item.productId);
-      if (p) p.sales = (p.sales || 0) + 1;
-    });
-    save(STORAGE.products, products);
-
-    cart = [];
-    save(STORAGE.cart, cart);
-    updateUI();
-
-    document.getElementById('orderSuccessMsg').textContent =
-      `رقم الطلب: ${order.id} — واتساب: ${order.whatsapp} — المجموع: ${formatPrice(total)} — سيتم التنفيذ قريباً`;
+    const total = normalizedCart.reduce((s, i) => s + Number(i.lineTotal || 0), 0);
+    if ((currentUser.balance || 0) < total) { toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true); showPage('wallet'); return; }
+    currentUser.balance -= total; currentUser.whatsapp = whatsapp; saveUser(currentUser);
+    const order = { id:uid('ord'), username:currentUser.username, whatsapp, items:normalizedCart, total, status:'pending', createdAt:new Date().toISOString(), source:'cart_checkout' };
+    const orders=load(STORAGE.orders,[]); orders.push(order); save(STORAGE.orders,orders);
+    const products=load(STORAGE.products,[]); normalizedCart.forEach(item => { const p=products.find(x=>x.id===item.productId); if(p)p.sales=(p.sales||0)+1; }); save(STORAGE.products,products);
+    cart=[]; save(STORAGE.cart,cart); updateUI();
+    document.getElementById('orderSuccessMsg').textContent=`تم إرسال الطلب ${order.id} بنجاح — واتساب: ${order.whatsapp} — المجموع: ${formatPrice(total)}`;
     showPage('order-success');
   };
 
@@ -878,25 +934,68 @@
 
   // Orders
   function renderAdminOrders() {
-    const orders = load(STORAGE.orders, []).reverse();
+    const orders = load(STORAGE.orders, []).slice().reverse();
     const tbody = document.querySelector('#ordersTable tbody');
-    tbody.innerHTML = orders.map(o => `
-      <tr>
-        <td>${o.id}</td>
-        <td>${o.username}</td>
-        <td>${o.whatsapp || '—'}</td>
-        <td>${o.items.map(i => i.name + ' ×' + i.qty).join('<br>')}</td>
-        <td>${formatPrice(o.total)}</td>
-        <td>${statusBadge(o.status)}</td>
-        <td>${new Date(o.createdAt).toLocaleString('ar')}</td>
-        <td>
-          ${o.status === 'pending' ? `
-            <button class="btn btn-sm btn-primary" onclick="completeOrder('${o.id}')">تم التنفيذ</button>
-          ` : '—'}
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="8">لا توجد طلبات</td></tr>';
+    tbody.innerHTML = orders.map(o => {
+      const services = (o.items || []).map((i, idx) => `
+        <div class="admin-order-mini">
+          <strong>${idx + 1}. ${escapeHtml(i.name || 'خدمة')}</strong>
+          <span>النوع: ${escapeHtml(typeLabel(i.serviceType || 'other'))}</span>
+          <span>الكمية: ${Number(i.quantity || i.qty || 1).toLocaleString('en-US')}</span>
+          <span>السعر: ${formatPrice(i.lineTotal != null ? i.lineTotal : (i.price || 0) * (i.qty || 1))}</span>
+          <span class="order-link-preview">${i.targetUrl ? '🔗 ' + escapeHtml(i.targetUrl) : '— لا يوجد رابط —'}</span>
+        </div>`).join('');
+      return `
+        <tr>
+          <td><strong>${escapeHtml(o.id)}</strong></td>
+          <td>${escapeHtml(o.username || '—')}</td>
+          <td><a class="admin-wa" href="https://wa.me/${String(o.whatsapp || '').replace(/\\D/g,'')}" target="_blank" rel="noopener">${escapeHtml(o.whatsapp || '—')}</a></td>
+          <td class="order-services-cell">${services || '—'}</td>
+          <td>${formatPrice(o.total || 0)}</td>
+          <td>${statusBadge(o.status)}</td>
+          <td>${new Date(o.createdAt).toLocaleString('ar')}</td>
+          <td>
+            <button class="btn btn-sm btn-secondary" onclick="viewOrderDetails('${o.id}')">عرض كل التفاصيل</button>
+            ${o.status === 'pending' ? `<button class="btn btn-sm btn-primary" onclick="completeOrder('${o.id}')">تم التنفيذ</button>` : ''}
+          </td>
+        </tr>`;
+    }).join('') || '<tr><td colspan="8">لا توجد طلبات</td></tr>';
   }
+
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[ch]));
+  }
+
+  window.viewOrderDetails = function(id) {
+    const orders=load(STORAGE.orders,[]); const o=orders.find(x=>x.id===id); if(!o)return;
+    const items=(o.items||[]).map((i,idx)=>`
+      <div class="detail-service-card">
+        <div class="detail-service-head"><span>#${idx+1}</span><strong>${escapeHtml(i.name||'خدمة')}</strong><b>${formatPrice(i.lineTotal != null ? i.lineTotal : (i.price||0)*(i.qty||1))}</b></div>
+        <div class="detail-grid">
+          <div><small>نوع الخدمة</small><strong>${escapeHtml(typeLabel(i.serviceType||'other'))}</strong></div>
+          <div><small>الكمية</small><strong>${Number(i.quantity||i.qty||1).toLocaleString('en-US')}</strong></div>
+          <div><small>سعر الوحدة</small><strong>${formatPrice(i.unitPrice||i.price||0)}</strong></div>
+          <div class="detail-full"><small>الرابط / بيانات التنفيذ</small>${i.targetUrl && /^https?:\/\//i.test(i.targetUrl) ? `<a href="${escapeHtml(i.targetUrl)}" target="_blank" rel="noopener">${escapeHtml(i.targetUrl)}</a>` : `<strong>${escapeHtml(i.targetUrl||'غير مضافة')}</strong>`}</div>
+          <div class="detail-full"><small>ملاحظات الخدمة</small><strong>${escapeHtml(i.notes||'لا توجد')}</strong></div>
+        </div>
+      </div>`).join('');
+    document.getElementById('orderDetailsTitle').textContent=`تفاصيل الطلب ${o.id}`;
+    document.getElementById('orderDetailsContent').innerHTML=`
+      <div class="detail-summary-grid">
+        <div><small>رقم الطلب</small><strong>${escapeHtml(o.id)}</strong></div>
+        <div><small>اسم المستخدم</small><strong>${escapeHtml(o.username||'—')}</strong></div>
+        <div><small>واتساب العميل</small><a href="https://wa.me/${String(o.whatsapp||'').replace(/\\D/g,'')}" target="_blank" rel="noopener">${escapeHtml(o.whatsapp||'—')}</a></div>
+        <div><small>تاريخ الطلب</small><strong>${new Date(o.createdAt).toLocaleString('ar')}</strong></div>
+        <div><small>مصدر الطلب</small><strong>${o.source==='quick_purchase'?'شراء مباشر':'السلة'}</strong></div>
+        <div><small>الحالة</small><strong>${statusBadge(o.status)}</strong></div>
+        <div class="detail-full"><small>ملاحظات العميل</small><strong>${escapeHtml(o.notes||'لا توجد')}</strong></div>
+      </div>
+      <h4 class="details-section-title">الخدمات المطلوبة</h4>${items}
+      <div class="details-grand-total"><span>الإجمالي المدفوع</span><strong>${formatPrice(o.total||0)}</strong></div>`;
+    document.getElementById('orderDetailsModal').classList.remove('hidden');
+  };
+
+  window.closeOrderDetails = function(){ document.getElementById('orderDetailsModal').classList.add('hidden'); };
 
   window.completeOrder = function (id) {
     const orders = load(STORAGE.orders, []);
