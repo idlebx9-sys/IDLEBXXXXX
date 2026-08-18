@@ -1,9 +1,11 @@
 /* ===== IDLEB STORE - Frontend App ===== */
-(function () {
+(function() {
   'use strict';
 
-  // ========== Constants & Storage Keys ==========
-  const STORAGE = {
+  console.log('✅ IDLEB STORE is loading...');
+
+  // ========== STORAGE KEYS ==========
+  var KEYS = {
     categories: 'idleb_categories',
     products: 'idleb_products',
     users: 'idleb_users',
@@ -16,62 +18,16 @@
     settings: 'idleb_site_settings'
   };
 
-  // Admin credentials
-  const ADMIN_USER = 'admin';
-  const ADMIN_HASH = btoa('Idleb@2025');
-  const ADMIN_DISPLAY_NAME = 'MOOHAMED || IDLEB X';
+  // ========== ADMIN ==========
+  var ADMIN_USER = 'admin';
+  var ADMIN_PASS = 'Idleb@2025';
 
-  // ========== Default Data ==========
-  const DEFAULT_CATEGORIES = [
-    { id: 'cat1', name: 'تبنيد حسابات', image: '', order: 1 },
-    { id: 'cat2', name: 'فك باند', image: '', order: 2 },
-    { id: 'cat3', name: 'خدمات الرشق', image: '', order: 3 },
-    { id: 'cat4', name: 'شحن ألعاب', image: '', order: 4 }
-  ];
-
-  const DEFAULT_PRODUCTS = [
-    { id: 'p1', name: 'تبنيد انستغرام', desc: 'حسابات انستغرام جاهزة ومضمونة', price: 15, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 42 },
-    { id: 'p2', name: 'تبنيد فيسبوك', desc: 'حسابات فيسبوك قديمة وموثقة', price: 12, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 35 },
-    { id: 'p3', name: 'تبنيد تليجرام', desc: 'أرقام تليجرام جاهزة', price: 10, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 28 },
-    { id: 'p4', name: 'تبنيد واتساب', desc: 'أرقام واتساب مع تحقق', price: 18, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 50 },
-    { id: 'p5', name: 'فك باند انستغرام', desc: 'فك حظر انستغرام بشكل دائم', price: 25, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 60 },
-    { id: 'p6', name: 'فك باند واتساب', desc: 'استعادة رقم واتساب محظور', price: 30, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 45 },
-    { id: 'p7', name: 'فك باند فيسبوك', desc: 'فك حظر حسابات فيسبوك', price: 22, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 33 },
-    { id: 'p8', name: 'فك باند تليجرام', desc: 'فك حظر قنوات وحسابات تليجرام', price: 20, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 20 },
-    { id: 'p9', name: 'فك باند تيك توك', desc: 'استعادة حسابات تيك توك', price: 28, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 38 },
-    { id: 'p10', name: 'رشق متابعين انستغرام', desc: 'متابعين حقيقيين', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 90, pricingNote: 'كل 1000 متابع = 2$' },
-    { id: 'p11', name: 'رشق تفاعل انستغرام', desc: 'تفاعل مستقل (إعجابات)', price: 1.5, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_engagement', active: true, sales: 55, pricingNote: 'كل 1000 تفاعل = 1.5$' },
-    { id: 'p12', name: 'رشق مشاهدات', desc: 'مشاهدات مستقلة', price: 1, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_views', active: true, sales: 40, pricingNote: 'كل 1000 مشاهدة = 1$' },
-    { id: 'p13', name: 'رشق متابعين تيك توك', desc: 'متابعين مستقلين', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 75, pricingNote: 'كل 1000 متابع = 2$' },
-    { id: 'p14', name: 'رشق أعضاء تليجرام', desc: 'أعضاء مستقلون', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 30, pricingNote: 'كل 1000 عضو = 2$' },
-    { id: 'p15', name: 'شحن ببجي', desc: 'شحن UC ببجي موبايل', price: 10, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 120, pricingNote: 'كل 1 وحدة = 10$' },
-    { id: 'p16', name: 'شحن لودو', desc: 'شحن عملات لودو ستار', price: 8, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 65, pricingNote: 'كل 1 وحدة = 8$' },
-    { id: 'p17', name: 'شحن جواكر', desc: 'شحن عملات جواكر', price: 7, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 48, pricingNote: 'كل 1 وحدة = 7$' },
-    { id: 'p18', name: 'شحن فري فاير', desc: 'شحن جواهر فري فاير', price: 9, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 95, pricingNote: 'كل 1 وحدة = 9$' }
-  ];
-
-  const DEFAULT_SETTINGS = {
-    walletImage: '',
-    adminPhone: '',
-    telegram: '',
-    channel: '',
-    ownerPhoto: '',
-    ownerName: 'MOOHAMED || IDLEB X',
-    ownerBio: 'صاحب ومشرف متجر IDLEB STORE — نوفر خدمات رقمية باحترافية وسرعة، مع متابعة مباشرة للطلبات وخدمة عملاء واضحة.',
-    loaderLogo: '',
-    loaderSeconds: 2.5,
-    emailjsPublicKey: '-MV0a0jjrdW0VbOML',
-    emailjsServiceId: 'service_y22dlbp',
-    emailjsTemplateVerifyId: 'template_ncqtx0e',
-    verificationExpiry: 24
-  };
-
-  // ========== Helpers ==========
+  // ========== HELPERS ==========
   function load(key, fallback) {
     try {
-      const data = localStorage.getItem(key);
+      var data = localStorage.getItem(key);
       return data ? JSON.parse(data) : fallback;
-    } catch {
+    } catch (e) {
       return fallback;
     }
   }
@@ -80,29 +36,30 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function uid(prefix = 'id') {
-    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  function uid() {
+    return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
-  function toast(msg, isError = false) {
-    const el = document.getElementById('toast');
+  function toast(msg, isError) {
+    var el = document.getElementById('toast');
     if (!el) return;
     el.textContent = msg;
     el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(function() {
-      el.classList.remove('show');
-    }, 3200);
+    setTimeout(function() { el.classList.remove('show'); }, 3000);
   }
 
   function formatPrice(n) {
     return Number(n).toLocaleString('ar-SY') + ' $';
   }
 
+  function placeholderImg(text) {
+    return 'https://placehold.co/400x250/8b5cf6/ffffff?text=' + encodeURIComponent(text);
+  }
+
   function typeLabel(t) {
-    const map = {
-      accounts: 'تبنيد / حسابات',
+    var map = {
+      accounts: 'تبنيد',
       unban: 'فك باند',
-      boost: 'رشق',
       boost_followers: 'رشق متابعين',
       boost_engagement: 'رشق تفاعل',
       boost_views: 'رشق مشاهدات',
@@ -112,251 +69,79 @@
     return map[t] || t;
   }
 
-  function placeholderImg(text) {
-    return 'https://placehold.co/400x250/8b5cf6/0a0a0f?text=' + encodeURIComponent(text) + '&font=cairo';
-  }
+  // ========== DEFAULT DATA ==========
+  var DEFAULT_CATEGORIES = [
+    { id: 'cat1', name: 'تبنيد حسابات', image: '', order: 1 },
+    { id: 'cat2', name: 'فك باند', image: '', order: 2 },
+    { id: 'cat3', name: 'خدمات الرشق', image: '', order: 3 },
+    { id: 'cat4', name: 'شحن ألعاب', image: '', order: 4 }
+  ];
 
-  function hashCode(s) {
-    let h = 0;
-    for (var i = 0; i < s.length; i++) h = ((h << 5) - h) + s.charCodeAt(i);
-    return h;
-  }
+  var DEFAULT_PRODUCTS = [
+    { id: 'p1', name: 'تبنيد انستغرام', desc: 'حسابات انستغرام جاهزة', price: 15, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 42 },
+    { id: 'p2', name: 'تبنيد فيسبوك', desc: 'حسابات فيسبوك قديمة', price: 12, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 35 },
+    { id: 'p3', name: 'تبنيد تليجرام', desc: 'أرقام تليجرام جاهزة', price: 10, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 28 },
+    { id: 'p4', name: 'تبنيد واتساب', desc: 'أرقام واتساب مع تحقق', price: 18, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 50 },
+    { id: 'p5', name: 'فك باند انستغرام', desc: 'فك حظر انستغرام', price: 25, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 60 },
+    { id: 'p6', name: 'فك باند واتساب', desc: 'استعادة رقم محظور', price: 30, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 45 },
+    { id: 'p7', name: 'فك باند فيسبوك', desc: 'فك حظر حسابات فيسبوك', price: 22, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 33 },
+    { id: 'p8', name: 'فك باند تليجرام', desc: 'فك حظر قنوات', price: 20, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 20 },
+    { id: 'p9', name: 'فك باند تيك توك', desc: 'استعادة حسابات تيك توك', price: 28, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 38 },
+    { id: 'p10', name: 'رشق متابعين انستغرام', desc: 'كل 1000 متابع', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 90, pricingNote: 'كل 1000 متابع = 2$' },
+    { id: 'p11', name: 'رشق تفاعل انستغرام', desc: 'كل 1000 تفاعل', price: 1.5, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_engagement', active: true, sales: 55, pricingNote: 'كل 1000 تفاعل = 1.5$' },
+    { id: 'p12', name: 'رشق مشاهدات', desc: 'كل 1000 مشاهدة', price: 1, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_views', active: true, sales: 40, pricingNote: 'كل 1000 مشاهدة = 1$' },
+    { id: 'p13', name: 'رشق متابعين تيك توك', desc: 'كل 1000 متابع', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 75, pricingNote: 'كل 1000 متابع = 2$' },
+    { id: 'p14', name: 'رشق أعضاء تليجرام', desc: 'كل 1000 عضو', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 30, pricingNote: 'كل 1000 عضو = 2$' },
+    { id: 'p15', name: 'شحن ببجي', desc: 'شحن UC', price: 10, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 120, pricingNote: 'كل 1 وحدة = 10$' },
+    { id: 'p16', name: 'شحن لودو', desc: 'شحن عملات', price: 8, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 65, pricingNote: 'كل 1 وحدة = 8$' },
+    { id: 'p17', name: 'شحن جواكر', desc: 'شحن عملات', price: 7, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 48, pricingNote: 'كل 1 وحدة = 7$' },
+    { id: 'p18', name: 'شحن فري فاير', desc: 'شحن جواهر', price: 9, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 95, pricingNote: 'كل 1 وحدة = 9$' }
+  ];
 
-  function isVerifiedUser(user) {
-    user = user || currentUser;
-    return !!(user && user.isVerified !== false);
-  }
-
-  function requireVerifiedUser(action) {
-    if (!currentUser) {
-      toast('يجب تسجيل الدخول أولاً', true);
-      showPage('login');
-      return false;
-    }
-    if (!isVerifiedUser()) {
-      toast('يرجى تفعيل حسابك أولاً', true);
-      showPage('login');
-      return false;
-    }
-    return true;
-  }
-
-  function verificationExpiryHours() {
-    var settings = load(STORAGE.settings, DEFAULT_SETTINGS);
-    return Math.min(168, Math.max(1, Number(settings.verificationExpiry) || 24));
-  }
-
-  function initEmailJS() {
-    var settings = load(STORAGE.settings, DEFAULT_SETTINGS);
-    if (!window.emailjs || !settings.emailjsPublicKey) return false;
-    try {
-      window.emailjs.init({ publicKey: settings.emailjsPublicKey });
-      return true;
-    } catch (error) {
-      console.error('EmailJS init failed:', error);
-      return false;
-    }
-  }
-
-  // ========== Send OTP ==========
-  window.sendVerificationEmail = async function(user) {
-    var settings = load(STORAGE.settings, DEFAULT_SETTINGS);
-    if (!settings.emailjsPublicKey || !settings.emailjsServiceId || !settings.emailjsTemplateVerifyId) {
-      throw new Error('EMAILJS_NOT_CONFIGURED');
-    }
-    if (!window.emailjs) throw new Error('EMAILJS_LIBRARY_NOT_LOADED');
-    if (!user || !user.email) throw new Error('EMAIL_REQUIRED');
-
-    var expiry = verificationExpiryHours();
-    var verificationCode = String(Math.floor(100000 + Math.random() * 900000));
-    
-    console.log('✅ Verification Code Generated:', verificationCode);
-    
-    var createdAt = new Date().toISOString();
-    var expiresAt = new Date(Date.now() + expiry * 60 * 60 * 1000).toISOString();
-    var pending = load(STORAGE.pendingUsers, []);
-    var idx = pending.findIndex(function(u) { 
-      return u.username === user.username || (u.email && u.email.toLowerCase() === user.email.toLowerCase());
-    });
-    var old = idx >= 0 ? pending[idx] : {};
-    var record = {
-      username: user.username,
-      email: user.email,
-      password: user.password,
-      balance: Number(user.balance || 0),
-      verification_code: verificationCode,
-      createdAt: createdAt,
-      expiresAt: expiresAt,
-      codeAttempts: 0
-    };
-    if (idx >= 0) pending[idx] = Object.assign({}, old, record);
-    else pending.push(record);
-    save(STORAGE.pendingUsers, pending);
-    pendingVerificationUser = record;
-
-    if (!initEmailJS()) throw new Error('EMAILJS_INIT_FAILED');
-
-    var params = {
-      to_email: user.email,
-      email: user.email,
-      user_email: user.email,
-      reply_to: user.email,
-      username: user.username,
-      name: user.username,
-      verification_code: verificationCode,
-      code: verificationCode,
-      otp: verificationCode,
-      verification_expiry_hours: expiry,
-      expiry_hours: expiry,
-      site_name: 'IDLEB STORE'
-    };
-
-    console.log('📧 Sending email with params:', params);
-
-    try {
-      var response = await window.emailjs.send(
-        settings.emailjsServiceId, 
-        settings.emailjsTemplateVerifyId, 
-        params
-      );
-      console.log('✅ Email sent successfully:', response);
-    } catch (error) {
-      console.error('❌ EmailJS send failed:', error);
-      var detail = error?.text || error?.message || String(error);
-      throw new Error('EMAILJS_SEND_FAILED: ' + detail);
-    }
-
-    return { verificationCode: verificationCode, expiresAt: expiresAt };
+  var DEFAULT_SETTINGS = {
+    emailjsPublicKey: '-MV0a0jjrdW0VbOML',
+    emailjsServiceId: 'service_y22dlbp',
+    emailjsTemplateVerifyId: 'template_ncqtx0e',
+    verificationExpiry: 24
   };
 
-  var pendingVerificationUser = null;
-
-  function showVerificationRetry(message, user) {
-    pendingVerificationUser = user || pendingVerificationUser;
-    var box = document.getElementById('verificationRetryBox');
-    var text = document.getElementById('verificationRetryMessage');
-    if (box) box.classList.remove('hidden');
-    if (text) text.textContent = message;
-  }
-
-  window.resendVerificationEmail = async function() {
-    var email = (document.getElementById('authEmail')?.value || pendingVerificationUser?.email || '').trim().toLowerCase();
-    var username = (document.getElementById('authUsername')?.value || pendingVerificationUser?.username || '').trim();
-    var pending = load(STORAGE.pendingUsers, []);
-    var user = pending.find(function(u) {
-      return (email && u.email?.toLowerCase() === email) || (username && u.username === username);
-    }) || pendingVerificationUser;
-    if (!user) {
-      toast('أدخل اسم المستخدم والبريد الإلكتروني للحساب غير المفعل', true);
-      return;
-    }
-    try {
-      toast('جاري إرسال رمز تحقق جديد...');
-      await window.sendVerificationEmail(user);
-      showVerificationRetry('تم إرسال رمز جديد إلى بريدك الإلكتروني. أدخل الرمز المكوّن من 6 أرقام.', user);
-      toast('تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
-    } catch (error) {
-      console.error(error);
-      showVerificationRetry('تعذر إرسال رمز التفعيل. تأكد من إعدادات EmailJS', user);
-      toast('فشل إرسال البريد. راجع إعدادات EmailJS', true);
-    }
-  };
-
-  window.verifyEmailCode = function() {
-    var code = (document.getElementById('verificationCodeInput')?.value || '').replace(/\D/g, '').trim();
-    var email = (document.getElementById('authEmail')?.value || pendingVerificationUser?.email || '').trim().toLowerCase();
-    var username = (document.getElementById('authUsername')?.value || pendingVerificationUser?.username || '').trim();
-    if (!/^\d{6}$/.test(code)) return toast('أدخل رمز التفعيل المكوّن من 6 أرقام', true);
-
-    var pending = load(STORAGE.pendingUsers, []);
-    var idx = pending.findIndex(function(u) {
-      return (email && u.email?.toLowerCase() === email) || (username && u.username === username);
-    });
-    if (idx < 0) return toast('لم يتم العثور على حساب بانتظار التفعيل', true);
-    var user = pending[idx];
-
-    if (user.expiresAt && Date.now() > new Date(user.expiresAt).getTime()) {
-      showVerificationRetry('انتهت صلاحية رمز التفعيل، اضغط إعادة إرسال للحصول على رمز جديد.', user);
-      return toast('انتهت صلاحية رمز التفعيل، يرجى طلب رمز جديد', true);
-    }
-    if (String(user.verification_code) !== code) {
-      user.codeAttempts = Number(user.codeAttempts || 0) + 1;
-      pending[idx] = user;
-      save(STORAGE.pendingUsers, pending);
-      return toast('رمز التفعيل غير صحيح', true);
-    }
-
-    var users = load(STORAGE.users, []);
-    var cleanUser = {
-      username: user.username,
-      email: user.email,
-      password: user.password,
-      balance: Number(user.balance || 0),
-      isVerified: true,
-      verifiedAt: new Date().toISOString()
-    };
-    var existing = users.findIndex(function(u) {
-      return u.username === user.username || (u.email && u.email.toLowerCase() === user.email.toLowerCase());
-    });
-    if (existing >= 0) users[existing] = Object.assign({}, users[existing], cleanUser);
-    else users.push(cleanUser);
-    save(STORAGE.users, users);
-    save(STORAGE.pendingUsers, pending.filter(function(_, i) { return i !== idx; }));
-    pendingVerificationUser = null;
-    var retry = document.getElementById('verificationRetryBox');
-    if (retry) retry.classList.add('hidden');
-    var codeBox = document.getElementById('verificationCodeBox');
-    if (codeBox) codeBox.classList.add('hidden');
-    toast('تم تفعيل حسابك بنجاح! يمكنك تسجيل الدخول الآن');
-    var confirm = document.getElementById('authPasswordConfirm');
-    if (confirm) confirm.value = '';
-  };
-
-  // ========== Init Data ==========
+  // ========== INIT DATA ==========
   function initData() {
-    if (!localStorage.getItem(STORAGE.categories)) {
-      save(STORAGE.categories, DEFAULT_CATEGORIES);
+    if (!localStorage.getItem(KEYS.categories)) {
+      save(KEYS.categories, DEFAULT_CATEGORIES);
     }
-    if (!localStorage.getItem(STORAGE.products)) {
-      save(STORAGE.products, DEFAULT_PRODUCTS);
+    if (!localStorage.getItem(KEYS.products)) {
+      save(KEYS.products, DEFAULT_PRODUCTS);
     }
-    if (!localStorage.getItem(STORAGE.users)) {
-      save(STORAGE.users, []);
+    if (!localStorage.getItem(KEYS.users)) {
+      save(KEYS.users, []);
     }
-    if (!localStorage.getItem(STORAGE.pendingUsers)) {
-      save(STORAGE.pendingUsers, []);
+    if (!localStorage.getItem(KEYS.pendingUsers)) {
+      save(KEYS.pendingUsers, []);
     }
-    if (!localStorage.getItem(STORAGE.topups)) {
-      save(STORAGE.topups, []);
+    if (!localStorage.getItem(KEYS.topups)) {
+      save(KEYS.topups, []);
     }
-    if (!localStorage.getItem(STORAGE.orders)) {
-      save(STORAGE.orders, []);
+    if (!localStorage.getItem(KEYS.orders)) {
+      save(KEYS.orders, []);
     }
-    if (!localStorage.getItem(STORAGE.cart)) {
-      save(STORAGE.cart, []);
+    if (!localStorage.getItem(KEYS.cart)) {
+      save(KEYS.cart, []);
     }
-    var storedSettings = load(STORAGE.settings, null);
-    if (!storedSettings) {
-      save(STORAGE.settings, DEFAULT_SETTINGS);
-    } else {
-      var mergedSettings = Object.assign({}, DEFAULT_SETTINGS, storedSettings);
-      if (!storedSettings.emailjsPublicKey) mergedSettings.emailjsPublicKey = DEFAULT_SETTINGS.emailjsPublicKey;
-      if (!storedSettings.emailjsServiceId) mergedSettings.emailjsServiceId = DEFAULT_SETTINGS.emailjsServiceId;
-      if (!storedSettings.emailjsTemplateVerifyId) mergedSettings.emailjsTemplateVerifyId = DEFAULT_SETTINGS.emailjsTemplateVerifyId;
-      if (!storedSettings.verificationExpiry) mergedSettings.verificationExpiry = DEFAULT_SETTINGS.verificationExpiry;
-      save(STORAGE.settings, mergedSettings);
+    if (!localStorage.getItem(KEYS.settings)) {
+      save(KEYS.settings, DEFAULT_SETTINGS);
     }
   }
 
-  // ========== State ==========
+  // ========== STATE ==========
   var currentUser = null;
   var cart = [];
   var adminLoggedIn = false;
 
   function loadState() {
-    currentUser = load(STORAGE.currentUser, null);
-    cart = load(STORAGE.cart, []);
-    adminLoggedIn = !!sessionStorage.getItem(STORAGE.adminSession);
+    currentUser = load(KEYS.currentUser, null);
+    cart = load(KEYS.cart, []);
+    adminLoggedIn = !!sessionStorage.getItem(KEYS.adminSession);
     updateUI();
   }
 
@@ -367,12 +152,6 @@
     var balAmount = document.getElementById('balanceAmount');
     var walletBal = document.getElementById('walletBalance');
 
-    var settings = load(STORAGE.settings, DEFAULT_SETTINGS);
-    var walletImg = document.getElementById('walletPaymentImage');
-    if (walletImg) {
-      walletImg.src = settings.walletImage || placeholderImg('IDLEB PAYMENT');
-      walletImg.alt = 'صورة الدفع';
-    }
     if (currentUser) {
       if (loginBtn) loginBtn.classList.add('hidden');
       if (logoutBtn) logoutBtn.classList.remove('hidden');
@@ -386,21 +165,36 @@
       if (walletBal) walletBal.textContent = '0 $';
     }
 
-    var walletNotice = document.getElementById('walletVerificationNotice');
-    if (walletNotice) {
-      if (!currentUser || isVerifiedUser()) {
-        walletNotice.classList.add('hidden');
-      } else {
-        walletNotice.classList.remove('hidden');
-      }
-    }
-
     var badge = document.getElementById('cartBadge');
-    var count = cart.reduce(function(s, i) { return s + i.qty; }, 0);
-    if (badge) badge.textContent = count;
+    if (badge) {
+      var count = 0;
+      for (var i = 0; i < cart.length; i++) {
+        count += cart[i].qty;
+      }
+      badge.textContent = count;
+    }
   }
 
-  // ========== Navigation ==========
+  function saveUser(user) {
+    var users = load(KEYS.users, []);
+    var found = false;
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === user.username) {
+        users[i].balance = user.balance;
+        if (user.email) users[i].email = user.email;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      users.push(user);
+    }
+    save(KEYS.users, users);
+    currentUser = user;
+    save(KEYS.currentUser, currentUser);
+  }
+
+  // ========== NAVIGATION ==========
   window.showPage = function(pageId, param) {
     var pages = document.querySelectorAll('.page');
     for (var i = 0; i < pages.length; i++) {
@@ -415,33 +209,26 @@
     if (pageId === 'home') renderHome();
     if (pageId === 'categories') renderCategories();
     if (pageId === 'category' && param) renderCategoryProducts(param);
-    if (pageId === 'product-detail' && param) renderProductDetail(param);
     if (pageId === 'cart') renderCart();
     if (pageId === 'about') renderAbout();
-    if (pageId === 'wallet') {
-      updateUI();
-      var topUp = document.getElementById('topUpSection');
-      if (topUp) topUp.classList.add('hidden');
-    }
+
     if (pageId === 'admin') {
       if (adminLoggedIn) {
-        var adminLogin = document.getElementById('adminLogin');
-        var adminPanel = document.getElementById('adminPanel');
-        if (adminLogin) adminLogin.classList.add('hidden');
-        if (adminPanel) adminPanel.classList.remove('hidden');
+        var loginEl = document.getElementById('adminLogin');
+        var panelEl = document.getElementById('adminPanel');
+        if (loginEl) loginEl.classList.add('hidden');
+        if (panelEl) panelEl.classList.remove('hidden');
         switchAdminTab('stats');
       } else {
-        var adminLogin2 = document.getElementById('adminLogin');
-        var adminPanel2 = document.getElementById('adminPanel');
-        if (adminLogin2) adminLogin2.classList.remove('hidden');
-        if (adminPanel2) adminPanel2.classList.add('hidden');
+        var loginEl2 = document.getElementById('adminLogin');
+        var panelEl2 = document.getElementById('adminPanel');
+        if (loginEl2) loginEl2.classList.remove('hidden');
+        if (panelEl2) panelEl2.classList.add('hidden');
       }
     }
 
     if (pageId === 'category' && param) {
       history.replaceState(null, '', '#category/' + param);
-    } else if (pageId === 'product-detail' && param) {
-      history.replaceState(null, '', '#product/' + param);
     } else if (pageId !== 'home') {
       history.replaceState(null, '', '#' + pageId);
     } else {
@@ -451,461 +238,177 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ========== Render Home ==========
+  // ========== RENDER HOME ==========
   function renderHome() {
-    var cats = load(STORAGE.categories, []).sort(function(a, b) { return a.order - b.order; });
-    var prods = load(STORAGE.products, []).filter(function(p) { return p.active; }).sort(function(a, b) { return (b.sales || 0) - (a.sales || 0); }).slice(0, 6);
+    console.log('🏠 Rendering home...');
+    
+    var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
+    var allProds = load(KEYS.products, []);
+    var prods = [];
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].active) {
+        prods.push(allProds[i]);
+      }
+    }
+    prods.sort(function(a, b) { return (b.sales || 0) - (a.sales || 0); });
+    prods = prods.slice(0, 6);
 
     var catGrid = document.getElementById('homeCategories');
     if (catGrid) {
-      catGrid.innerHTML = cats.map(function(c) {
-        return '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">' +
-          '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">' +
-          '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
-      }).join('');
+      var html = '';
+      for (var i = 0; i < cats.length; i++) {
+        var c = cats[i];
+        html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
+        html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">';
+        html += '<div class="card-body"><h3>' + c.name + '</h3></div>';
+        html += '</div>';
+      }
+      catGrid.innerHTML = html;
     }
 
-    var best = document.getElementById('bestSellers');
-    if (best) {
-      best.innerHTML = prods.map(function(p) { return productCardHTML(p); }).join('');
+    var bestEl = document.getElementById('bestSellers');
+    if (bestEl) {
+      var html2 = '';
+      for (var i = 0; i < prods.length; i++) {
+        html2 += productCardHTML(prods[i]);
+      }
+      bestEl.innerHTML = html2;
     }
   }
 
   function productCardHTML(p) {
     var price = Number(p.price || 0);
-    return '<div class="product-card product-card-simple" onclick="openProductDetail(\'' + p.id + '\')">' +
-      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '" loading="lazy">' +
-      '<div class="card-body">' +
-      '<span class="product-type">' + typeLabel(p.type) + '</span>' +
-      '<h3>' + p.name + '</h3>' +
-      '<p>' + (p.desc || '') + '</p>' +
-      (p.pricingNote ? '<div class="pricing-note">' + p.pricingNote + '</div>' : '<div class="product-price">ابتداءً من ' + formatPrice(price) + '</div>') +
-      '<button class="btn btn-primary btn-full" onclick="event.stopPropagation(); openProductDetail(\'' + p.id + '\')">عرض التفاصيل والطلب</button>' +
-      '</div></div>';
-  }
-
-  // ========== Categories ==========
-  function renderCategories() {
-    var cats = load(STORAGE.categories, []).sort(function(a, b) { return a.order - b.order; });
-    var grid = document.getElementById('allCategories');
-    if (grid) {
-      grid.innerHTML = cats.map(function(c) {
-        return '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">' +
-          '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">' +
-          '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
-      }).join('');
+    var html = '<div class="product-card product-card-simple">';
+    html += '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '" loading="lazy">';
+    html += '<div class="card-body">';
+    html += '<span class="product-type">' + typeLabel(p.type) + '</span>';
+    html += '<h3>' + p.name + '</h3>';
+    html += '<p>' + (p.desc || '') + '</p>';
+    if (p.pricingNote) {
+      html += '<div class="pricing-note">' + p.pricingNote + '</div>';
+    } else {
+      html += '<div class="product-price">' + formatPrice(price) + '</div>';
     }
+    html += '<button class="btn btn-primary btn-full" onclick="openProductDetail(\'' + p.id + '\')">عرض التفاصيل</button>';
+    html += '</div></div>';
+    return html;
   }
 
-  function getPlatformName(name) {
-    var n = String(name || '').toLowerCase();
-    if (n.includes('انستغرام') || n.includes('instagram')) return 'انستغرام';
-    if (n.includes('تيك توك') || n.includes('tiktok')) return 'تيك توك';
-    if (n.includes('تليجرام') || n.includes('telegram')) return 'تليجرام';
-    if (n.includes('فيسبوك') || n.includes('facebook')) return 'فيسبوك';
-    if (n.includes('يوتيوب') || n.includes('youtube')) return 'يوتيوب';
-    return String(name || '').replace(/^رشق\s*/, '').replace(/(متابعين|تفاعل|مشاهدات|اعضاء|إعجابات)/g, '').trim() || 'خدمة';
+  // ========== CATEGORIES ==========
+  function renderCategories() {
+    console.log('📂 Rendering categories...');
+    
+    var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
+    var grid = document.getElementById('allCategories');
+    if (!grid) return;
+    
+    var html = '';
+    for (var i = 0; i < cats.length; i++) {
+      var c = cats[i];
+      html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
+      html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">';
+      html += '<div class="card-body"><h3>' + c.name + '</h3></div>';
+      html += '</div>';
+    }
+    grid.innerHTML = html;
   }
 
-  function platformTypeLabel(type) {
-    var map = { boost_followers: 'رشق متابعين', boost_engagement: 'رشق تفاعل / لايكات', boost_views: 'رشق مشاهدات' };
-    return map[type] || typeLabel(type);
-  }
-
+  // ========== CATEGORY PRODUCTS ==========
   function renderCategoryProducts(catId) {
-    var cats = load(STORAGE.categories, []);
-    var cat = cats.find(function(c) { return c.id === catId; });
+    console.log('📦 Rendering category products:', catId);
+    
+    var cats = load(KEYS.categories, []);
+    var cat = null;
+    for (var i = 0; i < cats.length; i++) {
+      if (cats[i].id === catId) {
+        cat = cats[i];
+        break;
+      }
+    }
+    
     var titleEl = document.getElementById('categoryTitle');
     if (titleEl) titleEl.textContent = cat ? cat.name : 'المنتجات';
 
-    var prods = load(STORAGE.products, []).filter(function(p) { return p.categoryId === catId && p.active; });
+    var allProds = load(KEYS.products, []);
+    var prods = [];
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].categoryId === catId && allProds[i].active) {
+        prods.push(allProds[i]);
+      }
+    }
+
     var grid = document.getElementById('categoryProducts');
     if (!grid) return;
 
-    if (catId === 'cat3') {
-      var groups = [];
-      prods.forEach(function(p) {
-        var platform = getPlatformName(p.name);
-        if (!groups.some(function(g) { return g.platform === platform; })) {
-          groups.push({ platform: platform, products: [] });
-        }
-        groups.find(function(g) { return g.platform === platform; }).products.push(p);
-      });
-      grid.innerHTML = groups.length ? groups.map(function(g) {
-        var first = g.products[0];
-        var types = [];
-        for (var i = 0; i < g.products.length; i++) {
-          if (types.indexOf(g.products[i].type) === -1) types.push(g.products[i].type);
-        }
-        return '<div class="category-card platform-card" onclick="openPlatformDetail(\'' + g.platform + '\')">' +
-          '<img src="' + (first.image || placeholderImg(g.platform)) + '" alt="' + g.platform + '" loading="lazy">' +
-          '<div class="card-body">' +
-          '<span class="product-type">خدمات ' + g.platform + '</span>' +
-          '<h3>' + g.platform + '</h3>' +
-          '<p>اختر نوع الخدمة أولاً، ثم أدخل الرابط والكمية ورقم الواتساب والتفاصيل.</p>' +
-          '<div class="platform-chips">' + types.map(function(t) { return '<span>' + platformTypeLabel(t) + '</span>'; }).join('') + '</div>' +
-          '<button class="btn btn-primary btn-full">اختيار ' + g.platform + '</button>' +
-          '</div></div>';
-      }).join('') : '<p class="empty-state">لا توجد خدمات رشق حالياً</p>';
+    if (prods.length === 0) {
+      grid.innerHTML = '<p class="empty-state">لا توجد منتجات في هذا القسم حالياً</p>';
       return;
     }
 
-    grid.innerHTML = prods.length ? prods.map(function(p) { return productCardHTML(p); }).join('') : '<p class="empty-state">لا توجد منتجات في هذا القسم حالياً</p>';
-  }
-
-  function getPlatformProducts(platform) {
-    return load(STORAGE.products, []).filter(function(p) {
-      return p.active && p.categoryId === 'cat3' && getPlatformName(p.name) === platform;
-    });
-  }
-
-  window.openPlatformDetail = function(platform) {
-    var products = getPlatformProducts(platform);
-    if (!products.length) return toast('لا توجد خدمات لهذا المنتج حالياً', true);
-    var content = document.getElementById('productDetailContent');
-    if (!content) return;
-    content.innerHTML = 
-      '<div class="detail-hero-card">' +
-      '<div><span class="eyebrow">IDLEB STORE • ' + platform + '</span>' +
-      '<h1>خدمات ' + platform + '</h1>' +
-      '<p>اختر نوع الرشق أولاً، وبعدها ستظهر لك صفحة الطلب المبسطة لإضافة رقمك والرابط والكمية والتفاصيل.</p>' +
-      '</div></div>' +
-      '<h2 class="section-title detail-subtitle">اختر نوع الخدمة</h2>' +
-      '<div class="service-choice-grid">' +
-      products.map(function(p) {
-        return '<button class="service-choice" onclick="selectDetailProduct(\'' + p.id + '\')">' +
-          '<span>' + platformTypeLabel(p.type) + '</span>' +
-          '<strong>' + p.name + '</strong>' +
-          '<small>' + (p.pricingNote || p.desc || 'اضغط للمتابعة') + '</small>' +
-          '<b>متابعة ←</b></button>';
-      }).join('') +
-      '</div><div id="detailOrderFormWrap" class="detail-order-wrap hidden"></div>';
-    showPage('product-detail', 'platform-' + encodeURIComponent(platform));
-  };
-
-  window.openProductDetail = function(productId) {
-    var p = load(STORAGE.products, []).find(function(x) { return x.id === productId && x.active; });
-    if (!p) return;
-    renderSingleProductDetail(p);
-    showPage('product-detail', productId);
-  };
-
-  window.selectDetailProduct = function(productId) {
-    var p = load(STORAGE.products, []).find(function(x) { return x.id === productId && x.active; });
-    if (!p) return;
-    renderDetailOrderForm(p);
-  };
-
-  function renderProductDetail(param) {
-    if (String(param).startsWith('platform-')) {
-      var platform = decodeURIComponent(String(param).slice(9));
-      renderPlatformPage(platform);
-    } else {
-      var p = load(STORAGE.products, []).find(function(x) { return x.id === param && x.active; });
-      if (p) renderSingleProductDetail(p);
+    var html = '';
+    for (var i = 0; i < prods.length; i++) {
+      html += productCardHTML(prods[i]);
     }
+    grid.innerHTML = html;
   }
 
-  function renderPlatformPage(platform) {
-    var products = getPlatformProducts(platform);
+  // ========== PRODUCT DETAIL ==========
+  window.openProductDetail = function(productId) {
+    var allProds = load(KEYS.products, []);
+    var p = null;
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].id === productId && allProds[i].active) {
+        p = allProds[i];
+        break;
+      }
+    }
+    if (!p) return;
+    
     var content = document.getElementById('productDetailContent');
     if (!content) return;
-    if (!products.length) { content.innerHTML = '<p class="empty-state">الخدمة غير متاحة حالياً</p>'; return; }
-    content.innerHTML = 
-      '<div class="detail-hero-card">' +
-      '<div><span class="eyebrow">IDLEB STORE • ' + platform + '</span><h1>خدمات ' + platform + '</h1><p>اختر نوع الخدمة أولاً، ثم عبّئ بيانات الطلب في نفس الصفحة.</p></div>' +
-      '</div><h2 class="section-title detail-subtitle">اختر نوع الخدمة</h2>' +
-      '<div class="service-choice-grid">' +
-      products.map(function(p) {
-        return '<button class="service-choice" onclick="selectDetailProduct(\'' + p.id + '\')">' +
-          '<span>' + platformTypeLabel(p.type) + '</span>' +
-          '<strong>' + p.name + '</strong>' +
-          '<small>' + (p.pricingNote || p.desc || '') + '</small>' +
-          '<b>متابعة ←</b></button>';
-      }).join('') +
-      '</div><div id="detailOrderFormWrap" class="detail-order-wrap hidden"></div>';
-  }
-
-  function renderSingleProductDetail(p) {
-    var content = document.getElementById('productDetailContent');
-    if (!content) return;
+    
     content.innerHTML = 
       '<div class="detail-hero-card product-detail-head">' +
       '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '">' +
-      '<div><span class="eyebrow">' + typeLabel(p.type) + '</span><h1>' + p.name + '</h1><p>' + (p.desc || '') + '</p></div>' +
-      '</div><div id="detailOrderFormWrap" class="detail-order-wrap"></div>';
-    renderDetailOrderForm(p);
-  }
-
-  function renderDetailOrderForm(p) {
-    var wrap = document.getElementById('detailOrderFormWrap');
-    if (!wrap) return;
-    var boost = ['boost_followers', 'boost_engagement', 'boost_views'].indexOf(p.type) !== -1;
-    var game = p.type === 'games';
-    var meta = targetMeta(p.type);
-    var unit = Number(p.unitSize || 1000);
-    wrap.classList.remove('hidden');
-    wrap.innerHTML = 
-      '<div class="order-form-card">' +
-      '<div class="order-form-heading"><div><span class="product-type">' + typeLabel(p.type) + '</span><h2>تفاصيل الطلب</h2></div><strong id="detailLiveTotal">' + formatPrice(Number(p.price || 0)) + '</strong></div>' +
-      '<div class="detail-form-grid">' +
-      '<div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label><input type="tel" id="detailWhatsapp" value="' + (currentUser?.whatsapp || '') + '" placeholder="مثال: +9639xxxxxxxx" required></div>' +
-      '<div class="form-group"><label>' + meta.label + ' <span class="required">*</span></label><input type="' + meta.kind + '" id="detailTarget" placeholder="' + meta.placeholder + '" required></div>' +
-      ((boost || game) ? '<div class="form-group"><label>' + (boost ? 'الكمية المطلوبة' : 'الكمية') + ' <span class="required">*</span></label><input type="number" id="detailQuantity" min="' + unit + '" step="' + unit + '" value="' + unit + '"><small class="field-hint">' + (p.pricingNote || 'كل ' + unit.toLocaleString('en-US') + ' = ' + formatPrice(p.price)) + '</small></div>' : '') +
-      '<div class="form-group detail-notes"><label>تفاصيل إضافية <small>(اختياري)</small></label><textarea id="detailNotes" rows="4" placeholder="اكتب أي تفاصيل تساعد الإدمن على تنفيذ الطلب"></textarea></div>' +
-      '</div><button class="btn btn-primary btn-full btn-lg" onclick="submitDetailOrder(\'' + p.id + '\')">تأكيد الطلب</button></div>';
-    bindDetailQuantity(p);
-    wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  window.updateDetailTotal = function(productId) {
-    var p = load(STORAGE.products, []).find(function(x) { return x.id === productId; });
-    var out = document.getElementById('detailLiveTotal');
-    var input = document.getElementById('detailQuantity');
-    if (!p || !out || !input) return;
-    var quantityBased = ['boost_followers', 'boost_engagement', 'boost_views', 'games'].indexOf(p.type) !== -1;
-    if (!quantityBased) return;
-    var unit = Number(p.unitSize || 1);
-    var q = Math.max(unit, Number(input.value) || unit);
-    q = Math.ceil(q / unit) * unit;
-    input.value = q;
-    out.textContent = formatPrice((q / unit) * Number(p.price || 0));
+      '<div><span class="eyebrow">' + typeLabel(p.type) + '</span>' +
+      '<h1>' + p.name + '</h1>' +
+      '<p>' + (p.desc || '') + '</p>' +
+      '<div class="product-price">' + formatPrice(p.price) + '</div>' +
+      (p.pricingNote ? '<div class="pricing-note">' + p.pricingNote + '</div>' : '') +
+      '</div></div>' +
+      '<button class="btn btn-primary btn-lg" onclick="addToCart(\'' + p.id + '\')">أضف إلى السلة</button>' +
+      '<button class="btn btn-secondary btn-lg" onclick="openQuickOrder(\'' + p.id + '\')">شراء مباشر</button>';
+    
+    showPage('product-detail', productId);
   };
 
-  function bindDetailQuantity(p) {
-    var input = document.getElementById('detailQuantity');
-    if (!input) return;
-    input.addEventListener('input', function() { updateDetailTotal(p.id); });
-    input.addEventListener('change', function() { updateDetailTotal(p.id); });
-    updateDetailTotal(p.id);
-  }
-
-  window.submitDetailOrder = function(productId) {
-    if (!requireVerifiedUser()) return;
-    var p = load(STORAGE.products, []).find(function(x) { return x.id === productId && x.active; });
-    if (!p) return;
-    if (!currentUser) { toast('سجّل الدخول أولاً لإرسال الطلب', true); showPage('login'); return; }
-    var whatsapp = (document.getElementById('detailWhatsapp')?.value || '').trim();
-    var target = (document.getElementById('detailTarget')?.value || '').trim();
-    var notes = (document.getElementById('detailNotes')?.value || '').trim();
-    if (!whatsapp || whatsapp.length < 6) return toast('رقم واتساب العميل إجباري', true);
-    if (!target) return toast('أدخل الرابط أو معرّف اللاعب', true);
-    if (URL_TYPES.indexOf(p.type) !== -1) { try { new URL(target); } catch (e) { return toast('الرابط غير صالح', true); } }
-    var quantity = 1, total = Number(p.price || 0), unit = 1;
-    if (['boost_followers', 'boost_engagement', 'boost_views'].indexOf(p.type) !== -1) {
-      unit = Number(p.unitSize || 1000);
-      quantity = Math.max(unit, Number(document.getElementById('detailQuantity')?.value) || unit);
-      quantity = Math.ceil(quantity / unit) * unit;
-      total = (quantity / unit) * Number(p.price || 0);
-    } else if (p.type === 'games') {
-      unit = Number(p.unitSize || 1);
-      quantity = Math.max(unit, Number(document.getElementById('detailQuantity')?.value) || unit);
-      quantity = Math.ceil(quantity / unit) * unit;
-      total = (quantity / unit) * Number(p.price || 0);
-    }
-    if ((currentUser.balance || 0) < total) { toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true); showPage('wallet'); return; }
-    currentUser.balance -= total;
-    currentUser.whatsapp = whatsapp;
-    saveUser(currentUser);
-    var order = {
-      id: uid('ord'),
-      username: currentUser.username,
-      whatsapp: whatsapp,
-      total: total,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      source: 'product_detail',
-      items: [{
-        productId: p.id,
-        name: p.name,
-        serviceType: p.type,
-        quantity: quantity,
-        qty: 1,
-        unitSize: unit,
-        unitPrice: Number(p.price || 0),
-        price: total,
-        lineTotal: total,
-        image: p.image || '',
-        targetUrl: target,
-        notes: notes
-      }],
-      notes: notes
-    };
-    var orders = load(STORAGE.orders, []);
-    orders.push(order);
-    save(STORAGE.orders, orders);
-    var products = load(STORAGE.products, []);
-    var saved = products.find(function(x) { return x.id === p.id; });
-    if (saved) saved.sales = (saved.sales || 0) + 1;
-    save(STORAGE.products, products);
-    updateUI();
-    document.getElementById('orderSuccessMsg').textContent = 'تم إرسال الطلب ' + order.id + ' بنجاح — واتساب: ' + order.whatsapp + ' — المجموع: ' + formatPrice(total);
-    showPage('order-success');
-  };
-
-  // ========== Quick Purchase ==========
-  var URL_TYPES = ['accounts', 'unban', 'boost_followers', 'boost_engagement', 'boost_views'];
-
-  function targetMeta(type) {
-    if (URL_TYPES.indexOf(type) !== -1) {
-      return { label: 'رابط الحساب / المنشور', placeholder: 'https://instagram.com/...', kind: 'url', required: true };
-    }
-    if (type === 'games') {
-      return { label: 'معرّف اللاعب / ID', placeholder: 'أدخل ID اللاعب', kind: 'text', required: true };
-    }
-    return { label: 'بيانات التنفيذ', placeholder: 'اكتب أي معلومات يحتاجها الإدمن لتنفيذ الخدمة', kind: 'text', required: true };
-  }
-
-  window.openQuickOrder = function(productId) {
-    if (!requireVerifiedUser()) return;
-    if (!currentUser) {
-      toast('يجب تسجيل الدخول أولاً', true);
-      showPage('login');
-      return;
-    }
-    var products = load(STORAGE.products, []);
-    var p = products.find(function(x) { return x.id === productId && x.active; });
-    if (!p) return;
-    var q = getProductQuantity(p);
-    var meta = targetMeta(p.type);
-    var modal = document.getElementById('quickOrderModal');
-    if (!modal) return;
-    document.getElementById('quickOrderTitle').textContent = p.name;
-    document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة وسيتم إرسال الطلب مباشرة إلى لوحة التحكم.';
-    document.getElementById('quickOrderTotal').textContent = formatPrice(q.total);
-    var quantityBased = ['boost_followers', 'boost_engagement', 'boost_views', 'games'].indexOf(p.type) !== -1;
-    var quantityUnit = Number(p.unitSize || 1);
-    document.getElementById('quickOrderForm').innerHTML = 
-      (quantityBased ? '<div class="form-group"><label>الكمية المطلوبة</label><input type="number" id="quickQuantity" min="' + quantityUnit + '" step="' + quantityUnit + '" value="' + (quantityBased ? q.quantity : quantityUnit) + '"><small class="field-hint">' + (p.pricingNote || 'كل ' + quantityUnit.toLocaleString('en-US') + ' = ' + formatPrice(p.price)) + '</small></div>' : '') +
-      '<div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label><input type="tel" id="quickWhatsapp" value="' + (currentUser.whatsapp || '') + '" placeholder="مثال: +9639xxxxxxxx" required></div>' +
-      '<div class="form-group"><label>' + meta.label + ' <span class="required">*</span></label><input type="' + meta.kind + '" id="quickTarget" placeholder="' + meta.placeholder + '" required></div>' +
-      '<div class="form-group"><label>ملاحظات إضافية <small>(اختياري)</small></label><textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن"></textarea></div>' +
-      '<input type="hidden" id="quickProductId" value="' + p.id + '">';
-    modal.classList.remove('hidden');
-  };
-
-  window.updateQuickOrderTotal = function(unitPrice, unitSize) {
-    var input = document.getElementById('quickQuantity');
-    if (!input) return;
-    var q = Math.max(unitSize, Number(input.value) || unitSize);
-    q = Math.ceil(q / unitSize) * unitSize;
-    input.value = q;
-    var totalEl = document.getElementById('quickOrderTotal');
-    if (totalEl) totalEl.textContent = formatPrice((q / unitSize) * unitPrice);
-  };
-
-  document.addEventListener('input', function(event) {
-    if (event.target && event.target.id === 'quickQuantity') {
-      var productId = document.getElementById('quickProductId')?.value;
-      var p = load(STORAGE.products, []).find(function(x) { return x.id === productId; });
-      if (p) window.updateQuickOrderTotal(Number(p.price || 0), Number(p.unitSize || 1));
-    }
-  });
-
-  window.closeQuickOrder = function() {
-    var modal = document.getElementById('quickOrderModal');
-    if (modal) modal.classList.add('hidden');
-  };
-
-  window.submitQuickOrder = function() {
-    if (!currentUser) return closeQuickOrder();
-    var products = load(STORAGE.products, []);
-    var p = products.find(function(x) { return x.id === document.getElementById('quickProductId').value; });
-    if (!p) return;
-    var whatsapp = document.getElementById('quickWhatsapp').value.trim();
-    var target = document.getElementById('quickTarget').value.trim();
-    var notes = document.getElementById('quickNotes').value.trim();
-    if (!whatsapp || whatsapp.length < 6) return toast('رقم واتساب العميل إجباري', true);
-    if (!target) return toast('أدخل بيانات الخدمة المطلوبة', true);
-    if (URL_TYPES.indexOf(p.type) !== -1) {
-      try { new URL(target); } catch (e) { return toast('رابط الحساب غير صالح', true); }
-    }
-    var q = ['boost_followers', 'boost_engagement', 'boost_views', 'games'].indexOf(p.type) !== -1 ?
-      (function() {
-        var unit = Number(p.unitSize || 1);
-        var n = Math.max(unit, Number(document.getElementById('quickQuantity')?.value) || unit);
-        n = Math.ceil(n / unit) * unit;
-        return { quantity: n, total: (n / unit) * Number(p.price || 0), unit: unit };
-      })() :
-      { quantity: 1, total: Number(p.price || 0), unit: 1 };
-    if ((currentUser.balance || 0) < q.total) {
-      toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
-      closeQuickOrder();
-      showPage('wallet');
-      return;
-    }
-    currentUser.balance -= q.total;
-    currentUser.whatsapp = whatsapp;
-    saveUser(currentUser);
-    var order = {
-      id: uid('ord'),
-      username: currentUser.username,
-      whatsapp: whatsapp,
-      total: q.total,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      notes: notes,
-      source: 'quick_purchase',
-      items: [{
-        productId: p.id,
-        name: p.name,
-        serviceType: p.type,
-        quantity: q.quantity,
-        qty: 1,
-        unitSize: q.unit,
-        unitPrice: Number(p.price || 0),
-        price: q.total,
-        lineTotal: q.total,
-        image: p.image || '',
-        targetUrl: target,
-        notes: notes
-      }]
-    };
-    var orders = load(STORAGE.orders, []);
-    orders.push(order);
-    save(STORAGE.orders, orders);
-    p.sales = (p.sales || 0) + 1;
-    save(STORAGE.products, products);
-    closeQuickOrder();
-    updateUI();
-    document.getElementById('orderSuccessMsg').textContent = 'تم إرسال الطلب ' + order.id + ' بنجاح — واتساب: ' + order.whatsapp + ' — المجموع: ' + formatPrice(order.total);
-    showPage('order-success');
-  };
-
-  function getProductQuantity(product) {
-    var quantityBased = ['boost_followers', 'boost_engagement', 'boost_views', 'games'].indexOf(product.type) !== -1;
-    var unit = Number(product.unitSize || 1);
-    if (!quantityBased) return { quantity: 1, total: Number(product.price || 0), unit: unit };
-    var input = document.getElementById('qty-' + product.id);
-    var quantity = Math.max(unit, Number(input && input.value) || unit);
-    quantity = Math.ceil(quantity / unit) * unit;
-    return { quantity: quantity, total: (quantity / unit) * Number(product.price || 0), unit: unit };
-  }
-
-  // ========== Cart ==========
+  // ========== CART ==========
   window.addToCart = function(productId) {
-    if (!requireVerifiedUser()) return;
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
       return;
     }
-    var products = load(STORAGE.products, []);
-    var p = products.find(function(x) { return x.id === productId; });
+    
+    var allProds = load(KEYS.products, []);
+    var p = null;
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].id === productId) {
+        p = allProds[i];
+        break;
+      }
+    }
     if (!p) return;
 
-    var boost = ['boost_followers', 'boost_engagement', 'boost_views'].indexOf(p.type) !== -1;
-    var qty = 1;
-    var unitSize = Number(p.unitSize || 1000);
-    var linePrice = Number(p.price || 0);
-    if (boost) {
-      var input = document.getElementById('qty-' + p.id);
-      qty = Math.max(unitSize, Number(input && input.value) || unitSize);
-      qty = Math.ceil(qty / unitSize) * unitSize;
-      linePrice = (qty / unitSize) * Number(p.price || 0);
+    var existing = null;
+    for (var i = 0; i < cart.length; i++) {
+      if (cart[i].productId === productId) {
+        existing = cart[i];
+        break;
+      }
     }
-    var existing = cart.find(function(i) { return i.productId === productId; });
-    if (existing && !boost) {
+
+    if (existing) {
       existing.qty += 1;
       existing.lineTotal = existing.qty * Number(p.price || 0);
     } else {
@@ -913,17 +416,14 @@
         productId: productId,
         qty: 1,
         name: p.name,
-        price: linePrice,
-        lineTotal: linePrice,
+        price: Number(p.price || 0),
+        lineTotal: Number(p.price || 0),
         image: p.image,
-        serviceType: p.type,
-        unitSize: unitSize,
-        unitPrice: Number(p.price || 0),
-        quantity: qty,
-        targetUrl: ''
+        serviceType: p.type
       });
     }
-    save(STORAGE.cart, cart);
+
+    save(KEYS.cart, cart);
     updateUI();
     toast('تمت الإضافة إلى السلة ✓');
   };
@@ -931,252 +431,337 @@
   function renderCart() {
     var empty = document.getElementById('cartEmpty');
     var content = document.getElementById('cartContent');
-    if (!cart.length) {
+    
+    if (!cart || cart.length === 0) {
       if (empty) empty.classList.remove('hidden');
       if (content) content.classList.add('hidden');
       return;
     }
+    
     if (empty) empty.classList.add('hidden');
     if (content) content.classList.remove('hidden');
 
     var total = 0;
     var itemsEl = document.getElementById('cartItems');
     if (itemsEl) {
-      itemsEl.innerHTML = cart.map(function(item, idx) {
-        total += Number(item.lineTotal != null ? item.lineTotal : item.price * item.qty);
-        return '<div class="cart-item">' +
-          '<img src="' + (item.image || placeholderImg(item.name)) + '" alt="">' +
-          '<div class="cart-item-info">' +
-          '<h4>' + item.name + '</h4>' +
-          '<div class="product-price">' + formatPrice(item.lineTotal != null ? item.lineTotal : item.price * item.qty) + '</div>' +
-          (item.quantity ? '<small>الكمية: ' + Number(item.quantity).toLocaleString('en-US') + '</small>' : '') +
-          (['accounts', 'unban', 'boost_followers', 'boost_engagement', 'boost_views'].indexOf(item.serviceType) !== -1 || item.serviceType === 'games' || item.serviceType === 'other' ?
-            '<div class="form-group order-target-field"><label>' + targetMeta(item.serviceType).label + ' <span class="required">*</span></label><input type="' + targetMeta(item.serviceType).kind + '" id="target-' + idx + '" value="' + (item.targetUrl || '') + '" placeholder="' + targetMeta(item.serviceType).placeholder + '" required></div>' : '') +
-          '</div>' +
-          '<div class="cart-item-actions">' +
-          '<button class="qty-btn" onclick="changeQty(' + idx + ', -1)">−</button>' +
-          '<span>' + item.qty + '</span>' +
-          '<button class="qty-btn" onclick="changeQty(' + idx + ', 1)">+</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="removeFromCart(' + idx + ')">حذف</button>' +
-          '</div></div>';
-      }).join('');
+      var html = '';
+      for (var i = 0; i < cart.length; i++) {
+        var item = cart[i];
+        total += Number(item.lineTotal || item.price * item.qty);
+        html += '<div class="cart-item">';
+        html += '<img src="' + (item.image || placeholderImg(item.name)) + '" alt="">';
+        html += '<div class="cart-item-info">';
+        html += '<h4>' + item.name + '</h4>';
+        html += '<div class="product-price">' + formatPrice(item.lineTotal || item.price * item.qty) + '</div>';
+        html += '</div>';
+        html += '<div class="cart-item-actions">';
+        html += '<button class="qty-btn" onclick="changeQty(' + i + ', -1)">−</button>';
+        html += '<span>' + item.qty + '</span>';
+        html += '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="removeFromCart(' + i + ')">حذف</button>';
+        html += '</div></div>';
+      }
+      itemsEl.innerHTML = html;
     }
+    
     var totalEl = document.getElementById('cartTotal');
     if (totalEl) totalEl.textContent = formatPrice(total);
   }
 
   window.changeQty = function(idx, delta) {
-    if (['boost_followers', 'boost_engagement', 'boost_views'].indexOf(cart[idx].serviceType) !== -1) {
-      var step = Number(cart[idx].unitSize || 1000);
-      cart[idx].qty = Math.max(step, cart[idx].qty + delta * step);
-      cart[idx].quantity = cart[idx].qty;
-      cart[idx].lineTotal = (cart[idx].qty / step) * Number(cart[idx].unitPrice || 0);
+    if (idx < 0 || idx >= cart.length) return;
+    cart[idx].qty += delta;
+    if (cart[idx].qty < 1) {
+      cart.splice(idx, 1);
     } else {
-      cart[idx].qty += delta;
-      if (cart[idx].qty < 1) cart.splice(idx, 1);
+      cart[idx].lineTotal = cart[idx].qty * Number(cart[idx].price || 0);
     }
-    save(STORAGE.cart, cart);
+    save(KEYS.cart, cart);
     updateUI();
     renderCart();
   };
 
   window.removeFromCart = function(idx) {
+    if (idx < 0 || idx >= cart.length) return;
     cart.splice(idx, 1);
-    save(STORAGE.cart, cart);
+    save(KEYS.cart, cart);
     updateUI();
     renderCart();
   };
 
-  window.checkout = function() {
-    if (!requireVerifiedUser('إتمام الطلب')) return;
-    if (!currentUser) { toast('يجب تسجيل الدخول', true); showPage('login'); return; }
-    if (!cart.length) return;
-    var whatsappEl = document.getElementById('orderWhatsapp');
-    var whatsapp = (whatsappEl && whatsappEl.value || '').trim();
-    if (!whatsapp || whatsapp.length < 6) { toast('رقم واتساب إجباري لإتمام الطلب', true); if (whatsappEl) whatsappEl.focus(); return; }
-
-    var normalizedCart;
-    try {
-      normalizedCart = cart.map(function(item, index) {
-        var needsTarget = URL_TYPES.indexOf(item.serviceType) !== -1;
-        var targetUrl = item.targetUrl || '';
-        if (needsTarget || item.serviceType === 'games' || item.serviceType === 'other') {
-          var field = document.getElementById('target-' + index);
-          targetUrl = (field && field.value || '').trim();
-          if (!targetUrl) throw new Error('missing-target');
-          if (needsTarget) { try { new URL(targetUrl); } catch (e) { throw new Error('bad-url'); } }
-        }
-        var lineTotal = Number(item.lineTotal != null ? item.lineTotal : item.price * item.qty);
-        return Object.assign({}, item, { targetUrl: targetUrl, lineTotal: lineTotal, notes: item.notes || '' });
-      });
-    } catch (err) {
-      toast(err && err.message === 'bad-url' ? 'أحد الروابط غير صالح' : 'أدخل بيانات التنفيذ لكل خدمة', true);
-      return;
-    }
-    var total = normalizedCart.reduce(function(s, i) { return s + Number(i.lineTotal || 0); }, 0);
-    if ((currentUser.balance || 0) < total) { toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true); showPage('wallet'); return; }
-    currentUser.balance -= total;
-    currentUser.whatsapp = whatsapp;
-    saveUser(currentUser);
-    var order = {
-      id: uid('ord'),
-      username: currentUser.username,
-      whatsapp: whatsapp,
-      items: normalizedCart,
-      total: total,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      source: 'cart_checkout'
-    };
-    var orders = load(STORAGE.orders, []);
-    orders.push(order);
-    save(STORAGE.orders, orders);
-    var products = load(STORAGE.products, []);
-    normalizedCart.forEach(function(item) {
-      var p = products.find(function(x) { return x.id === item.productId; });
-      if (p) p.sales = (p.sales || 0) + 1;
-    });
-    save(STORAGE.products, products);
-    cart = [];
-    save(STORAGE.cart, cart);
-    updateUI();
-    document.getElementById('orderSuccessMsg').textContent = 'تم إرسال الطلب ' + order.id + ' بنجاح — واتساب: ' + order.whatsapp + ' — المجموع: ' + formatPrice(total);
-    showPage('order-success');
-  };
-
-  // ========== Auth ==========
-  window.handleAuth = async function(e) {
-    e.preventDefault();
-    var username = document.getElementById('authUsername').value.trim();
-    var email = document.getElementById('authEmail').value.trim().toLowerCase();
-    var password = document.getElementById('authPassword').value;
-    var passwordConfirm = document.getElementById('authPasswordConfirm').value;
-    var retryBox = document.getElementById('verificationRetryBox');
-    if (retryBox) retryBox.classList.add('hidden');
-
-    // ADMIN LOGIN
-    if (username === ADMIN_USER && btoa(password) === ADMIN_HASH) {
-      adminLoggedIn = true;
-      sessionStorage.setItem(STORAGE.adminSession, '1');
-      toast('مرحباً ' + ADMIN_DISPLAY_NAME);
-      showPage('admin');
-      var adminLogin = document.getElementById('adminLogin');
-      var adminPanel = document.getElementById('adminPanel');
-      if (adminLogin) adminLogin.classList.add('hidden');
-      if (adminPanel) adminPanel.classList.remove('hidden');
-      switchAdminTab('stats');
-      return;
-    }
-
-    if (!username) return toast('اسم المستخدم مطلوب', true);
-    if (!email) return toast('البريد الإلكتروني مطلوب', true);
-    if (password.length < 4) return toast('كلمة المرور يجب أن تكون 4 أحرف على الأقل', true);
-    if (password !== passwordConfirm) return toast('كلمتا المرور غير متطابقتين', true);
-
-    var users = load(STORAGE.users, []);
-    var pendingUsers = load(STORAGE.pendingUsers, []);
-    var user = users.find(function(u) { return u.username === username || (u.email && u.email.toLowerCase() === email); });
-    var pending = pendingUsers.find(function(u) { return u.username === username || (u.email && u.email.toLowerCase() === email); });
-
-    if (user) {
-      if (user.email && user.email.toLowerCase() !== email) return toast('البريد الإلكتروني لا يطابق الحساب', true);
-      if (user.password !== btoa(password)) return toast('كلمة المرور غير صحيحة', true);
-      if (user.isVerified === false) {
-        pendingVerificationUser = pending || { username: user.username, email: user.email, password: user.password, balance: user.balance || 0 };
-        toast('يرجى تفعيل حسابك عبر البريد الإلكتروني', true);
-        showVerificationRetry('حسابك غير مفعل. أدخل رمز التفعيل الذي وصلك إلى بريدك الإلكتروني أو أعد إرساله.', pendingVerificationUser);
-        var box = document.getElementById('verificationCodeBox');
-        if (box) box.classList.remove('hidden');
-        return;
-      }
-      currentUser = { username: user.username, email: user.email, balance: user.balance || 0, isVerified: true };
-      save(STORAGE.currentUser, currentUser);
-      updateUI();
-      toast('مرحباً ' + username);
-      showPage('home');
-      return;
-    }
-
-    if (pending) {
-      if (pending.password !== btoa(password)) return toast('كلمة المرور غير صحيحة', true);
-      pendingVerificationUser = pending;
-      toast('يرجى تفعيل حسابك عبر البريد الإلكتروني', true);
-      showVerificationRetry('تم إنشاء الحساب لكنه غير مفعل. أدخل رمز التفعيل أو أعد إرساله.', pending);
-      var box2 = document.getElementById('verificationCodeBox');
-      if (box2) box2.classList.remove('hidden');
-      return;
-    }
-
-    var newPendingUser = { username: username, email: email, password: btoa(password), balance: 0 };
-    try {
-      await window.sendVerificationEmail(newPendingUser);
-      var box3 = document.getElementById('verificationCodeBox');
-      if (box3) box3.classList.remove('hidden');
-      showVerificationRetry('تم إرسال رمز التفعيل إلى بريدك الإلكتروني. أدخل الرمز المكوّن من 6 أرقام لإكمال التسجيل.', newPendingUser);
-      toast('تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
-    } catch (error) {
-      console.error(error);
-      pendingVerificationUser = load(STORAGE.pendingUsers, []).find(function(u) { return u.username === username; }) || newPendingUser;
-      var box4 = document.getElementById('verificationCodeBox');
-      if (box4) box4.classList.remove('hidden');
-      showVerificationRetry('تعذر إرسال رمز التفعيل. تأكد من إعدادات قالب EmailJS ثم اضغط إعادة الإرسال.', pendingVerificationUser);
-      toast('تعذر إرسال البريد حالياً. راجع إعدادات EmailJS', true);
-    }
-  };
-
-  window.logout = function() {
-    currentUser = null;
-    localStorage.removeItem(STORAGE.currentUser);
-    updateUI();
-    toast('تم تسجيل الخروج');
-    showPage('home');
-  };
-
-  function saveUser(user) {
-    var users = load(STORAGE.users, []);
-    var idx = users.findIndex(function(u) { return u.username === user.username; });
-    if (idx >= 0) {
-      users[idx].balance = user.balance;
-      if (user.email) users[idx].email = user.email;
-      if (typeof user.isVerified === 'boolean') users[idx].isVerified = user.isVerified;
-      save(STORAGE.users, users);
-    }
-    currentUser = user;
-    save(STORAGE.currentUser, currentUser);
-  }
-
-  // ========== Wallet / TopUp ==========
-  window.showTopUpModal = function() {
-    if (!requireVerifiedUser('استخدام المحفظة')) return;
+  // ========== QUICK ORDER ==========
+  window.openQuickOrder = function(productId) {
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
       return;
     }
-    var topUp = document.getElementById('topUpSection');
-    if (topUp) topUp.classList.remove('hidden');
+    
+    var allProds = load(KEYS.products, []);
+    var p = null;
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].id === productId && allProds[i].active) {
+        p = allProds[i];
+        break;
+      }
+    }
+    if (!p) return;
+    
+    var modal = document.getElementById('quickOrderModal');
+    if (!modal) return;
+    
+    document.getElementById('quickOrderTitle').textContent = p.name;
+    document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة';
+    document.getElementById('quickOrderTotal').textContent = formatPrice(p.price);
+    document.getElementById('quickOrderForm').innerHTML = 
+      '<div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label>' +
+      '<input type="tel" id="quickWhatsapp" placeholder="مثال: +9639xxxxxxxx" required></div>' +
+      '<div class="form-group"><label>رابط الحساب <span class="required">*</span></label>' +
+      '<input type="url" id="quickTarget" placeholder="https://instagram.com/..." required></div>' +
+      '<div class="form-group"><label>ملاحظات إضافية</label>' +
+      '<textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن"></textarea></div>' +
+      '<input type="hidden" id="quickProductId" value="' + p.id + '">';
+    
+    modal.classList.remove('hidden');
   };
 
-  window.copyShamCode = function() {
-    var code = document.getElementById('shamCode').textContent;
-    navigator.clipboard.writeText(code).then(function() { toast('تم نسخ رقم المحفظة'); });
+  window.closeQuickOrder = function() {
+    var modal = document.getElementById('quickOrderModal');
+    if (modal) modal.classList.add('hidden');
+  };
+
+  window.submitQuickOrder = function() {
+    if (!currentUser) return;
+    
+    var whatsapp = document.getElementById('quickWhatsapp').value.trim();
+    var target = document.getElementById('quickTarget').value.trim();
+    var notes = document.getElementById('quickNotes').value.trim();
+    var productId = document.getElementById('quickProductId').value;
+    
+    if (!whatsapp || whatsapp.length < 6) {
+      toast('رقم واتساب العميل إجباري', true);
+      return;
+    }
+    if (!target) {
+      toast('أدخل رابط الحساب', true);
+      return;
+    }
+    
+    var allProds = load(KEYS.products, []);
+    var p = null;
+    for (var i = 0; i < allProds.length; i++) {
+      if (allProds[i].id === productId) {
+        p = allProds[i];
+        break;
+      }
+    }
+    if (!p) return;
+    
+    var total = Number(p.price || 0);
+    if ((currentUser.balance || 0) < total) {
+      toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
+      closeQuickOrder();
+      showPage('wallet');
+      return;
+    }
+    
+    currentUser.balance -= total;
+    currentUser.whatsapp = whatsapp;
+    saveUser(currentUser);
+    
+    var order = {
+      id: uid('ord'),
+      username: currentUser.username,
+      whatsapp: whatsapp,
+      total: total,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      items: [{
+        productId: p.id,
+        name: p.name,
+        serviceType: p.type,
+        qty: 1,
+        price: total,
+        targetUrl: target,
+        notes: notes
+      }]
+    };
+    
+    var orders = load(KEYS.orders, []);
+    orders.push(order);
+    save(KEYS.orders, orders);
+    
+    closeQuickOrder();
+    updateUI();
+    
+    document.getElementById('orderSuccessMsg').textContent = 
+      'تم إرسال الطلب ' + order.id + ' بنجاح — المجموع: ' + formatPrice(total);
+    showPage('order-success');
+  };
+
+  // ========== CHECKOUT ==========
+  window.checkout = function() {
+    if (!currentUser) {
+      toast('يجب تسجيل الدخول أولاً', true);
+      showPage('login');
+      return;
+    }
+    if (!cart || cart.length === 0) {
+      toast('السلة فارغة', true);
+      return;
+    }
+    
+    var whatsappEl = document.getElementById('orderWhatsapp');
+    var whatsapp = (whatsappEl ? whatsappEl.value.trim() : '');
+    if (!whatsapp || whatsapp.length < 6) {
+      toast('رقم واتساب إجباري', true);
+      if (whatsappEl) whatsappEl.focus();
+      return;
+    }
+    
+    var total = 0;
+    for (var i = 0; i < cart.length; i++) {
+      total += Number(cart[i].lineTotal || cart[i].price * cart[i].qty);
+    }
+    
+    if ((currentUser.balance || 0) < total) {
+      toast('رصيدك غير كافٍ. يرجى شحن المحفظة أولاً', true);
+      showPage('wallet');
+      return;
+    }
+    
+    currentUser.balance -= total;
+    currentUser.whatsapp = whatsapp;
+    saveUser(currentUser);
+    
+    var order = {
+      id: uid('ord'),
+      username: currentUser.username,
+      whatsapp: whatsapp,
+      items: cart.slice(),
+      total: total,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+    
+    var orders = load(KEYS.orders, []);
+    orders.push(order);
+    save(KEYS.orders, orders);
+    
+    // Increase sales
+    var products = load(KEYS.products, []);
+    for (var i = 0; i < cart.length; i++) {
+      for (var j = 0; j < products.length; j++) {
+        if (products[j].id === cart[i].productId) {
+          products[j].sales = (products[j].sales || 0) + 1;
+          break;
+        }
+      }
+    }
+    save(KEYS.products, products);
+    
+    cart = [];
+    save(KEYS.cart, cart);
+    updateUI();
+    
+    document.getElementById('orderSuccessMsg').textContent = 
+      'تم إرسال الطلب ' + order.id + ' بنجاح — المجموع: ' + formatPrice(total);
+    showPage('order-success');
+  };
+
+  // ========== AUTH ==========
+  window.handleAuth = function(e) {
+    e.preventDefault();
+    
+    var username = document.getElementById('authUsername').value.trim();
+    var email = document.getElementById('authEmail').value.trim().toLowerCase();
+    var password = document.getElementById('authPassword').value;
+    var passwordConfirm = document.getElementById('authPasswordConfirm').value;
+    
+    // Admin login
+    if (username === ADMIN_USER && password === ADMIN_PASS) {
+      adminLoggedIn = true;
+      sessionStorage.setItem(KEYS.adminSession, '1');
+      toast('مرحباً أدمن');
+      showPage('admin');
+      return;
+    }
+    
+    if (!username) { toast('اسم المستخدم مطلوب', true); return; }
+    if (!email) { toast('البريد الإلكتروني مطلوب', true); return; }
+    if (password.length < 4) { toast('كلمة المرور 4 أحرف على الأقل', true); return; }
+    if (password !== passwordConfirm) { toast('كلمتا المرور غير متطابقتين', true); return; }
+    
+    var users = load(KEYS.users, []);
+    var user = null;
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === username || users[i].email === email) {
+        user = users[i];
+        break;
+      }
+    }
+    
+    if (user) {
+      if (user.password !== password) {
+        toast('كلمة المرور غير صحيحة', true);
+        return;
+      }
+      currentUser = { username: user.username, email: user.email, balance: user.balance || 0 };
+      save(KEYS.currentUser, currentUser);
+      updateUI();
+      toast('مرحباً ' + username);
+      showPage('home');
+    } else {
+      var newUser = {
+        username: username,
+        email: email,
+        password: password,
+        balance: 0,
+        isVerified: true
+      };
+      users.push(newUser);
+      save(KEYS.users, users);
+      currentUser = { username: username, email: email, balance: 0 };
+      save(KEYS.currentUser, currentUser);
+      updateUI();
+      toast('تم إنشاء الحساب بنجاح');
+      showPage('home');
+    }
+  };
+
+  window.logout = function() {
+    currentUser = null;
+    localStorage.removeItem(KEYS.currentUser);
+    updateUI();
+    toast('تم تسجيل الخروج');
+    showPage('home');
+  };
+
+  // ========== WALLET ==========
+  window.showTopUpModal = function() {
+    if (!currentUser) {
+      toast('يجب تسجيل الدخول أولاً', true);
+      showPage('login');
+      return;
+    }
+    var section = document.getElementById('topUpSection');
+    if (section) section.classList.remove('hidden');
   };
 
   window.submitTopUp = function(e) {
     e.preventDefault();
-    if (!requireVerifiedUser('استخدام المحفظة')) return;
     if (!currentUser) return;
-
+    
     var txNumber = document.getElementById('txNumber').value.trim();
     var amount = Number(document.getElementById('txAmount').value);
     var currency = document.getElementById('txCurrency').value;
-
+    
     if (!txNumber || amount < 1) {
       toast('يرجى إدخال بيانات صحيحة', true);
       return;
     }
-
-    var topups = load(STORAGE.topups, []);
+    
+    var topups = load(KEYS.topups, []);
     topups.push({
       id: uid('top'),
       username: currentUser.username,
@@ -1186,291 +771,382 @@
       status: 'pending',
       createdAt: new Date().toISOString()
     });
-    save(STORAGE.topups, topups);
-
+    save(KEYS.topups, topups);
+    
     document.getElementById('topUpForm').reset();
-    var topUpSection = document.getElementById('topUpSection');
-    if (topUpSection) topUpSection.classList.add('hidden');
+    var section = document.getElementById('topUpSection');
+    if (section) section.classList.add('hidden');
     toast('تم استلام طلبك، سيتم مراجعته قريباً ✓');
   };
 
-  // ========== Admin ==========
-  window.adminLogin = function(e) {
-    e.preventDefault();
-    var user = document.getElementById('adminUser').value.trim();
-    var pass = document.getElementById('adminPass').value;
-
-    if (user === ADMIN_USER && btoa(pass) === ADMIN_HASH) {
-      adminLoggedIn = true;
-      sessionStorage.setItem(STORAGE.adminSession, '1');
-      var adminLogin = document.getElementById('adminLogin');
-      var adminPanel = document.getElementById('adminPanel');
-      if (adminLogin) adminLogin.classList.add('hidden');
-      if (adminPanel) adminPanel.classList.remove('hidden');
-      switchAdminTab('stats');
-      toast('مرحباً أدمن');
-    } else {
-      toast('بيانات الدخول غير صحيحة', true);
-    }
-  };
-
-  window.adminLogout = function() {
-    adminLoggedIn = false;
-    sessionStorage.removeItem(STORAGE.adminSession);
-    var adminLogin = document.getElementById('adminLogin');
-    var adminPanel = document.getElementById('adminPanel');
-    if (adminLogin) adminLogin.classList.remove('hidden');
-    if (adminPanel) adminPanel.classList.add('hidden');
-    showPage('home');
-  };
-
+  // ========== ADMIN ==========
   window.switchAdminTab = function(tab) {
     var contents = document.querySelectorAll('.admin-tab-content');
     for (var i = 0; i < contents.length; i++) {
       contents[i].classList.remove('active');
     }
     var btns = document.querySelectorAll('.tab-btn');
-    for (var j = 0; j < btns.length; j++) {
-      btns[j].classList.remove('active');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].classList.remove('active');
     }
+    
     var content = document.getElementById('admin-' + tab);
     if (content) content.classList.add('active');
+    
     var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
     if (btn) btn.classList.add('active');
-
+    
     if (tab === 'stats') renderStats();
     if (tab === 'categories') renderAdminCategories();
     if (tab === 'products') renderAdminProducts();
     if (tab === 'topups') renderAdminTopups();
     if (tab === 'orders') renderAdminOrders();
     if (tab === 'users') renderAdminUsers();
-    if (tab === 'settings') renderSiteSettings();
   };
 
   function renderStats() {
-    var products = load(STORAGE.products, []);
-    var orders = load(STORAGE.orders, []);
-    var topups = load(STORAGE.topups, []);
-    var users = load(STORAGE.users, []);
-    var totalTopup = topups.filter(function(t) { return t.status === 'approved'; }).reduce(function(s, t) { return s + Number(t.amount); }, 0);
-    var totalSales = orders.reduce(function(s, o) { return s + o.total; }, 0);
-
+    var products = load(KEYS.products, []);
+    var orders = load(KEYS.orders, []);
+    var topups = load(KEYS.topups, []);
+    var users = load(KEYS.users, []);
+    
     var grid = document.getElementById('statsGrid');
-    if (grid) {
-      grid.innerHTML =
-        '<div class="stat-card"><h4>عدد المنتجات</h4><p>' + products.length + '</p></div>' +
-        '<div class="stat-card"><h4>عدد الطلبات</h4><p>' + orders.length + '</p></div>' +
-        '<div class="stat-card"><h4>طلبات الشحن</h4><p>' + topups.length + '</p></div>' +
-        '<div class="stat-card"><h4>المستخدمين</h4><p>' + users.length + '</p></div>' +
-        '<div class="stat-card"><h4>إجمالي المبيعات</h4><p>' + formatPrice(totalSales) + '</p></div>' +
-        '<div class="stat-card"><h4>الرصيد المشحون</h4><p>' + totalTopup + '</p></div>';
-    }
+    if (!grid) return;
+    
+    grid.innerHTML = 
+      '<div class="stat-card"><h4>المنتجات</h4><p>' + products.length + '</p></div>' +
+      '<div class="stat-card"><h4>الطلبات</h4><p>' + orders.length + '</p></div>' +
+      '<div class="stat-card"><h4>طلبات الشحن</h4><p>' + topups.length + '</p></div>' +
+      '<div class="stat-card"><h4>المستخدمين</h4><p>' + users.length + '</p></div>';
   }
 
-  // Categories admin
-  window.showAddCategoryForm = function() {
-    var form = document.getElementById('addCategoryForm');
-    if (form) form.classList.remove('hidden');
-  };
-  window.hideAddCategoryForm = function() {
-    var form = document.getElementById('addCategoryForm');
-    if (form) form.classList.add('hidden');
-  };
-
-  window.addCategory = function() {
-    var name = document.getElementById('catName').value.trim();
-    var image = document.getElementById('catImage').value.trim();
-    if (!name) return toast('أدخل اسم القسم', true);
-
-    var cats = load(STORAGE.categories, []);
-    cats.push({
-      id: uid('cat'),
-      name: name,
-      image: image,
-      order: cats.length + 1
-    });
-    save(STORAGE.categories, cats);
-    document.getElementById('catName').value = '';
-    document.getElementById('catImage').value = '';
-    hideAddCategoryForm();
-    renderAdminCategories();
-    toast('تمت إضافة القسم');
-  };
-
   function renderAdminCategories() {
-    var cats = load(STORAGE.categories, []).sort(function(a, b) { return a.order - b.order; });
+    var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var tbody = document.querySelector('#catsTable tbody');
     if (!tbody) return;
-    tbody.innerHTML = cats.map(function(c) {
-      return '<tr><td>' + c.name + '</td><td>' + (c.image ? '✓' : '—') + '</td><td>' + c.order + '</td><td>' +
+    
+    var html = '';
+    for (var i = 0; i < cats.length; i++) {
+      var c = cats[i];
+      html += '<tr><td>' + c.name + '</td><td>' + (c.image ? '✓' : '—') + '</td><td>' + c.order + '</td><td>' +
         '<button class="btn btn-sm btn-secondary" onclick="editCategory(\'' + c.id + '\')">تعديل</button>' +
         '<button class="btn btn-sm btn-danger" onclick="deleteCategory(\'' + c.id + '\')">حذف</button></td></tr>';
-    }).join('');
+    }
+    tbody.innerHTML = html;
   }
 
   window.editCategory = function(id) {
-    var cats = load(STORAGE.categories, []);
-    var c = cats.find(function(x) { return x.id === id; });
+    var cats = load(KEYS.categories, []);
+    var c = null;
+    for (var i = 0; i < cats.length; i++) {
+      if (cats[i].id === id) { c = cats[i]; break; }
+    }
     if (!c) return;
+    
     var newName = prompt('اسم القسم الجديد:', c.name);
-    if (newName === null) return;
-    c.name = newName.trim() || c.name;
-    var newImg = prompt('رابط الصورة (اتركه كما هو):', c.image || '');
-    if (newImg !== null) c.image = newImg.trim();
-    save(STORAGE.categories, cats);
+    if (newName !== null) c.name = newName.trim() || c.name;
+    save(KEYS.categories, cats);
     renderAdminCategories();
     toast('تم التعديل');
   };
 
   window.deleteCategory = function(id) {
-    if (!confirm('هل تريد حذف هذا القسم؟')) return;
-    var cats = load(STORAGE.categories, []);
-    cats = cats.filter(function(c) { return c.id !== id; });
-    save(STORAGE.categories, cats);
+    if (!confirm('حذف القسم؟')) return;
+    var cats = load(KEYS.categories, []);
+    var newCats = [];
+    for (var i = 0; i < cats.length; i++) {
+      if (cats[i].id !== id) newCats.push(cats[i]);
+    }
+    save(KEYS.categories, newCats);
     renderAdminCategories();
     toast('تم الحذف');
   };
 
-  // Products admin
-  window.showAddProductForm = function() {
-    var cats = load(STORAGE.categories, []);
-    var sel = document.getElementById('prodCategory');
-    if (sel) {
-      sel.innerHTML = cats.map(function(c) { return '<option value="' + c.id + '">' + c.name + '</option>'; }).join('');
-    }
-    var form = document.getElementById('addProductForm');
-    if (form) form.classList.remove('hidden');
-  };
-  window.hideAddProductForm = function() {
-    var form = document.getElementById('addProductForm');
-    if (form) form.classList.add('hidden');
-  };
-
-  window.addProduct = function() {
-    var name = document.getElementById('prodName').value.trim();
-    var desc = document.getElementById('prodDesc').value.trim();
-    var price = Number(document.getElementById('prodPrice').value);
-    var unitSize = Number(document.getElementById('prodUnitSize').value) || 1000;
-    var pricingNote = document.getElementById('prodPricingNote').value.trim();
-    var image = document.getElementById('prodImage').value.trim();
-    var categoryId = document.getElementById('prodCategory').value;
-    var type = document.getElementById('prodType').value;
-    var active = document.getElementById('prodActive').checked;
-
-    if (!name || price < 0) return toast('بيانات غير مكتملة', true);
-
-    var products = load(STORAGE.products, []);
-    products.push({
-      id: uid('p'),
-      name: name,
-      desc: desc,
-      price: price,
-      unitSize: unitSize,
-      pricingNote: pricingNote,
-      image: image,
-      categoryId: categoryId,
-      type: type,
-      active: active,
-      sales: 0
-    });
-    save(STORAGE.products, products);
-    hideAddProductForm();
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodDesc').value = '';
-    document.getElementById('prodPrice').value = '';
-    document.getElementById('prodUnitSize').value = '1000';
-    document.getElementById('prodPricingNote').value = '';
-    document.getElementById('prodImage').value = '';
-    renderAdminProducts();
-    toast('تمت إضافة المنتج');
+  window.addCategory = function() {
+    var name = document.getElementById('catName').value.trim();
+    if (!name) { toast('أدخل اسم القسم', true); return; }
+    
+    var cats = load(KEYS.categories, []);
+    cats.push({ id: uid('cat'), name: name, image: '', order: cats.length + 1 });
+    save(KEYS.categories, cats);
+    document.getElementById('catName').value = '';
+    document.getElementById('addCategoryForm').classList.add('hidden');
+    renderAdminCategories();
+    toast('تمت الإضافة');
   };
 
   function renderAdminProducts() {
-    var products = load(STORAGE.products, []);
-    var cats = load(STORAGE.categories, []);
+    var products = load(KEYS.products, []);
+    var cats = load(KEYS.categories, []);
     var tbody = document.querySelector('#prodsTable tbody');
     if (!tbody) return;
-    tbody.innerHTML = products.map(function(p) {
-      var cat = cats.find(function(c) { return c.id === p.categoryId; });
-      return '<tr><td>' + p.name + '</td><td>' + (cat ? cat.name : '—') + '</td><td>' +
-        formatPrice(p.price) + (['boost_followers', 'boost_engagement', 'boost_views'].indexOf(p.type) !== -1 ? '<br><small>لكل ' + Number(p.unitSize || 1000).toLocaleString('en-US') + '</small>' : '') +
-        '</td><td>' + typeLabel(p.type) + '</td><td>' + (p.active ? '🟢 نشط' : '🔴 متوقف') + '</td><td>' +
-        '<button class="btn btn-sm btn-secondary" onclick="toggleProduct(\'' + p.id + '\')">' + (p.active ? 'إيقاف' : 'تفعيل') + '</button>' +
-        '<button class="btn btn-sm btn-secondary" onclick="editProduct(\'' + p.id + '\')">تعديل</button>' +
+    
+    var html = '';
+    for (var i = 0; i < products.length; i++) {
+      var p = products[i];
+      var catName = '—';
+      for (var j = 0; j < cats.length; j++) {
+        if (cats[j].id === p.categoryId) { catName = cats[j].name; break; }
+      }
+      html += '<tr><td>' + p.name + '</td><td>' + catName + '</td><td>' + formatPrice(p.price) + '</td><td>' + typeLabel(p.type) + '</td><td>' + (p.active ? '🟢 نشط' : '🔴 متوقف') + '</td><td>' +
+        '<button class="btn btn-sm btn-secondary" onclick="toggleProduct(\'' + p.id + '\')">تغيير</button>' +
         '<button class="btn btn-sm btn-danger" onclick="deleteProduct(\'' + p.id + '\')">حذف</button></td></tr>';
-    }).join('');
+    }
+    tbody.innerHTML = html;
   }
 
   window.toggleProduct = function(id) {
-    var products = load(STORAGE.products, []);
-    var p = products.find(function(x) { return x.id === id; });
-    if (p) {
-      p.active = !p.active;
-      save(STORAGE.products, products);
-      renderAdminProducts();
+    var products = load(KEYS.products, []);
+    for (var i = 0; i < products.length; i++) {
+      if (products[i].id === id) {
+        products[i].active = !products[i].active;
+        break;
+      }
     }
-  };
-
-  window.editProduct = function(id) {
-    var products = load(STORAGE.products, []);
-    var p = products.find(function(x) { return x.id === id; });
-    if (!p) return;
-    var name = prompt('الاسم:', p.name);
-    if (name === null) return;
-    p.name = name.trim() || p.name;
-    var price = prompt('السعر:', p.price);
-    if (price !== null) p.price = Number(price) || p.price;
-    var desc = prompt('الوصف:', p.desc || '');
-    if (desc !== null) p.desc = desc;
-    save(STORAGE.products, products);
+    save(KEYS.products, products);
     renderAdminProducts();
-    toast('تم التعديل');
   };
 
   window.deleteProduct = function(id) {
     if (!confirm('حذف المنتج؟')) return;
-    var products = load(STORAGE.products, []);
-    products = products.filter(function(p) { return p.id !== id; });
-    save(STORAGE.products, products);
+    var products = load(KEYS.products, []);
+    var newProds = [];
+    for (var i = 0; i < products.length; i++) {
+      if (products[i].id !== id) newProds.push(products[i]);
+    }
+    save(KEYS.products, newProds);
     renderAdminProducts();
     toast('تم الحذف');
   };
 
-  // Topups
+  window.addProduct = function() {
+    var name = document.getElementById('prodName').value.trim();
+    var price = Number(document.getElementById('prodPrice').value);
+    var categoryId = document.getElementById('prodCategory').value;
+    var type = document.getElementById('prodType').value;
+    
+    if (!name || price < 0) { toast('بيانات غير مكتملة', true); return; }
+    
+    var products = load(KEYS.products, []);
+    products.push({
+      id: uid('p'),
+      name: name,
+      desc: document.getElementById('prodDesc').value.trim(),
+      price: price,
+      unitSize: Number(document.getElementById('prodUnitSize').value) || 1000,
+      image: document.getElementById('prodImage').value.trim(),
+      categoryId: categoryId,
+      type: type,
+      active: true,
+      sales: 0
+    });
+    save(KEYS.products, products);
+    document.getElementById('addProductForm').classList.add('hidden');
+    renderAdminProducts();
+    toast('تمت إضافة المنتج');
+  };
+
+  window.showAddProductForm = function() {
+    var cats = load(KEYS.categories, []);
+    var sel = document.getElementById('prodCategory');
+    if (sel) {
+      var html = '';
+      for (var i = 0; i < cats.length; i++) {
+        html += '<option value="' + cats[i].id + '">' + cats[i].name + '</option>';
+      }
+      sel.innerHTML = html;
+    }
+    document.getElementById('addProductForm').classList.remove('hidden');
+  };
+
+  window.hideAddProductForm = function() {
+    document.getElementById('addProductForm').classList.add('hidden');
+  };
+
+  window.showAddCategoryForm = function() {
+    document.getElementById('addCategoryForm').classList.remove('hidden');
+  };
+
+  window.hideAddCategoryForm = function() {
+    document.getElementById('addCategoryForm').classList.add('hidden');
+  };
+
   function renderAdminTopups() {
-    var topups = load(STORAGE.topups, []).reverse();
+    var topups = load(KEYS.topups, []).reverse();
     var tbody = document.querySelector('#topupsTable tbody');
     if (!tbody) return;
-    tbody.innerHTML = topups.map(function(t) {
-      return '<tr><td>' + t.username + '</td><td>' + t.txNumber + '</td><td>' + t.amount + '</td><td>' + t.currency + '</td><td>' + statusBadge(t.status) + '</td><td>' + new Date(t.createdAt).toLocaleString('ar') + '</td><td>' +
-        (t.status === 'pending' ?
-          '<button class="btn btn-sm btn-primary" onclick="approveTopup(\'' + t.id + '\')">قبول</button>' +
-          '<button class="btn btn-sm btn-danger" onclick="rejectTopup(\'' + t.id + '\')">رفض</button>' :
-          '—') +
+    
+    var html = '';
+    for (var i = 0; i < topups.length; i++) {
+      var t = topups[i];
+      html += '<tr><td>' + t.username + '</td><td>' + t.txNumber + '</td><td>' + t.amount + '</td><td>' + t.currency + '</td><td>' + (t.status === 'pending' ? '⏳ قيد المراجعة' : t.status === 'approved' ? '✅ مقبول' : '❌ مرفوض') + '</td><td>' + new Date(t.createdAt).toLocaleString('ar') + '</td><td>' +
+        (t.status === 'pending' ? '<button class="btn btn-sm btn-primary" onclick="approveTopup(\'' + t.id + '\')">قبول</button><button class="btn btn-sm btn-danger" onclick="rejectTopup(\'' + t.id + '\')">رفض</button>' : '—') +
         '</td></tr>';
-    }).join('') || '<tr><td colspan="8">لا توجد طلبات</td></tr>';
-  }
-
-  function statusBadge(s) {
-    if (s === 'pending') return '⏳ قيد المراجعة';
-    if (s === 'approved') return '✅ مقبول';
-    if (s === 'rejected') return '❌ مرفوض';
-    return s;
+    }
+    tbody.innerHTML = html || '<tr><td colspan="8">لا توجد طلبات</td></tr>';
   }
 
   window.approveTopup = function(id) {
-    var topups = load(STORAGE.topups, []);
-    var t = topups.find(function(x) { return x.id === id; });
+    var topups = load(KEYS.topups, []);
+    var t = null;
+    for (var i = 0; i < topups.length; i++) {
+      if (topups[i].id === id) { t = topups[i]; break; }
+    }
     if (!t || t.status !== 'pending') return;
-
-    t.status = 'approved';
-    var users = load(STORAGE.users, []);
-    var u = users.find(function(x) { return x.username === t.username; });
-    if (u) {
-      var add = Number(t.amount);
-      if (t.currency === 'SYP') add = Math.round(add / 10000);
-      u.balance = (u.balance || 0) + add;
-      save(STORAGE.users, users);
-      if (currentUser && currentUser.username === t.username) {
-        currentUser.balance = u.balance;
     
+    t.status = 'approved';
+    var users = load(KEYS.users, []);
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === t.username) {
+        var add = Number(t.amount);
+        if (t.currency === 'SYP') add = Math.round(add / 10000);
+        users[i].balance = (users[i].balance || 0) + add;
+        break;
+      }
+    }
+    save(KEYS.users, users);
+    save(KEYS.topups, topups);
+    renderAdminTopups();
+    toast('تم قبول الطلب وإضافة الرصيد');
+  };
+
+  window.rejectTopup = function(id) {
+    var topups = load(KEYS.topups, []);
+    for (var i = 0; i < topups.length; i++) {
+      if (topups[i].id === id) {
+        topups[i].status = 'rejected';
+        break;
+      }
+    }
+    save(KEYS.topups, topups);
+    renderAdminTopups();
+    toast('تم رفض الطلب');
+  };
+
+  function renderAdminOrders() {
+    var orders = load(KEYS.orders, []).reverse();
+    var tbody = document.querySelector('#ordersTable tbody');
+    if (!tbody) return;
+    
+    var html = '';
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+      html += '<tr><td><strong>' + o.id + '</strong></td><td>' + (o.username || '—') + '</td><td>' + (o.whatsapp || '—') + '</td><td>' + (o.items ? o.items.length + ' خدمة' : '—') + '</td><td>' + formatPrice(o.total || 0) + '</td><td>' + (o.status === 'pending' ? '⏳ قيد المراجعة' : '✅ منفذ') + '</td><td>' + new Date(o.createdAt).toLocaleString('ar') + '</td><td>' +
+        (o.status === 'pending' ? '<button class="btn btn-sm btn-primary" onclick="completeOrder(\'' + o.id + '\')">تم التنفيذ</button>' : '') +
+        '</td></tr>';
+    }
+    tbody.innerHTML = html || '<tr><td colspan="8">لا توجد طلبات</td></tr>';
+  }
+
+  window.completeOrder = function(id) {
+    var orders = load(KEYS.orders, []);
+    for (var i = 0; i < orders.length; i++) {
+      if (orders[i].id === id) {
+        orders[i].status = 'approved';
+        break;
+      }
+    }
+    save(KEYS.orders, orders);
+    renderAdminOrders();
+    toast('تم تحديث حالة الطلب');
+  };
+
+  function renderAdminUsers() {
+    var users = load(KEYS.users, []);
+    var pending = load(KEYS.pendingUsers, []);
+    var tbody = document.querySelector('#usersTable tbody');
+    if (!tbody) return;
+    
+    var html = '';
+    for (var i = 0; i < users.length; i++) {
+      var u = users[i];
+      html += '<tr><td>' + u.username + '</td><td>' + (u.email || '—') + '</td><td>' + formatPrice(u.balance || 0) + '</td><td>✅ مفعل</td><td>' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar') : '—') + '</td></tr>';
+    }
+    for (var i = 0; i < pending.length; i++) {
+      var u = pending[i];
+      html += '<tr><td>' + u.username + '</td><td>' + (u.email || '—') + '</td><td>' + formatPrice(0) + '</td><td>⏳ غير مفعل</td><td>' + (u.createdAt ? new Date(u.createdAt).toLocaleDateString('ar') : '—') + '</td></tr>';
+    }
+    tbody.innerHTML = html || '<tr><td colspan="5">لا يوجد مستخدمون</td></tr>';
+  }
+
+  // ========== ABOUT ==========
+  function renderAbout() {
+    var settings = load(KEYS.settings, {});
+    var photo = document.getElementById('ownerPhoto');
+    if (photo) photo.src = settings.ownerPhoto || placeholderImg('MOOHAMED');
+    
+    var name = document.getElementById('ownerName');
+    if (name) name.textContent = settings.ownerName || 'MOOHAMED || IDLEB X';
+    
+    var bio = document.getElementById('ownerBio');
+    if (bio) bio.textContent = settings.ownerBio || 'صاحب ومشرف متجر IDLEB STORE';
+  }
+
+  // ========== LOADER ==========
+  function startLoader() {
+    try {
+      var loader = document.getElementById('siteLoader');
+      if (!loader) return;
+      
+      // Hide after 2.5 seconds
+      setTimeout(function() {
+        if (loader) loader.classList.add('hidden');
+      }, 2500);
+      
+      // Safety: hide after 5 seconds
+      setTimeout(function() {
+        if (loader && !loader.classList.contains('hidden')) {
+          loader.classList.add('hidden');
+        }
+      }, 5000);
+    } catch (e) {
+      var loader = document.getElementById('siteLoader');
+      if (loader) loader.classList.add('hidden');
+    }
+  }
+
+  // ========== HASH ROUTING ==========
+  function handleHash() {
+    var hash = location.hash.slice(1) || 'home';
+    if (hash.startsWith('category/')) {
+      var id = hash.split('/')[1];
+      showPage('category', id);
+    } else if (hash === 'admin') {
+      showPage('admin');
+    } else {
+      showPage(hash);
+    }
+  }
+
+  // ========== MOBILE MENU ==========
+  document.addEventListener('DOMContentLoaded', function() {
+    var toggle = document.getElementById('menuToggle');
+    if (toggle) {
+      toggle.addEventListener('click', function() {
+        var links = document.getElementById('navLinks');
+        if (links) links.classList.toggle('open');
+      });
+    }
+  });
+
+  // ========== BOOT ==========
+  console.log('🚀 Booting IDLEB STORE...');
+  
+  initData();
+  loadState();
+  handleHash();
+  window.addEventListener('hashchange', handleHash);
+  renderAbout();
+  startLoader();
+
+  // Expose for debugging
+  window.IDLEB = {
+    load: load,
+    save: save,
+    KEYS: KEYS,
+    currentUser: function() { return currentUser; },
+    cart: function() { return cart; }
+  };
+
+  console.log('✅ IDLEB STORE ready!');
+})();
