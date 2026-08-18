@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
   <div id="siteLoader" class="site-loader">
@@ -126,6 +127,7 @@
           </div>
           <button class="btn btn-primary btn-lg" id="addBalanceBtn" onclick="showTopUpModal()">إضافة رصيد</button>
         </div>
+        <div id="walletVerificationNotice" class="verification-retry hidden">يرجى تفعيل حسابك عبر البريد الإلكتروني قبل استخدام المحفظة أو شحن الرصيد.</div>
 
         <div id="topUpSection" class="topup-section hidden">
           <div class="sham-cash-box">
@@ -189,18 +191,60 @@
       <div class="section login-section">
         <div class="auth-card">
           <h2>تسجيل الدخول / إنشاء حساب</h2>
-          <form id="loginForm" onsubmit="handleAuth(event)">
+          <form id="loginForm" onsubmit="handleAuth(event)" novalidate>
             <div class="form-group">
               <label>اسم المستخدم</label>
               <input type="text" id="authUsername" required minlength="3" placeholder="اسم المستخدم">
             </div>
             <div class="form-group">
-              <label>كلمة المرور</label>
-              <input type="password" id="authPassword" required minlength="4" placeholder="كلمة المرور">
+              <label>البريد الإلكتروني <span class="required">*</span></label>
+              <input type="email" id="authEmail" required placeholder="name@example.com" autocomplete="email">
             </div>
-            <button type="submit" class="btn btn-primary btn-full">دخول / تسجيل</button>
+            <div class="form-group">
+              <label>كلمة المرور <span class="required">*</span></label>
+              <input type="password" id="authPassword" required minlength="4" placeholder="كلمة المرور" autocomplete="new-password">
+            </div>
+            <div class="form-group">
+              <label>تأكيد كلمة المرور <span class="required">*</span></label>
+              <input type="password" id="authPasswordConfirm" required minlength="4" placeholder="أعد كتابة كلمة المرور" autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">دخول / إنشاء حساب</button>
           </form>
-          <p class="auth-hint">إذا كان الحساب غير موجود سيتم إنشاؤه تلقائياً</p>
+          <div id="verificationCodeBox" class="verification-retry hidden">
+            <p><strong>رمز التفعيل</strong></p>
+            <p class="muted">أرسلنا رمزًا من 6 أرقام إلى بريدك الإلكتروني. أدخله هنا لإكمال التسجيل.</p>
+            <input id="verificationCodeInput" class="verification-code-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="123456" aria-label="رمز التفعيل">
+            <button type="button" class="btn btn-primary btn-full" onclick="verifyEmailCode()">تفعيل الحساب</button>
+          </div>
+          <div id="verificationRetryBox" class="verification-retry hidden">
+            <p id="verificationRetryMessage"></p>
+            <button type="button" class="btn btn-secondary btn-full" onclick="resendVerificationEmail()">إعادة إرسال رمز التفعيل</button>
+          </div>
+          <p class="auth-hint">الحسابات الجديدة تحتاج تفعيل البريد الإلكتروني قبل الشراء أو استخدام المحفظة.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- EMAIL VERIFICATION PAGE -->
+    <section id="page-verify" class="page">
+      <div class="section verification-section">
+        <div id="verificationPending" class="verification-box hidden">
+          <div class="verification-icon">✉</div>
+          <h2>تأكيد البريد الإلكتروني</h2>
+          <p>أدخل رمز التفعيل الذي وصلك إلى بريدك الإلكتروني من صفحة تسجيل الدخول.</p>
+        </div>
+        <div id="verificationSuccess" class="verification-box hidden">
+          <div class="verification-icon success">✓</div>
+          <h2>تم تفعيل حسابك بنجاح!</h2>
+          <p>يمكنك تسجيل الدخول الآن واستخدام المتجر.</p>
+          <button class="btn btn-primary" onclick="showPage('login')">تسجيل الدخول</button>
+        </div>
+        <div id="verificationError" class="verification-box hidden">
+          <div class="verification-icon error">!</div>
+          <h2 id="verificationErrorTitle">رابط التفعيل غير صالح</h2>
+          <p id="verificationErrorMessage">الرابط غير صالح أو منتهي الصلاحية.</p>
+          <button class="btn btn-secondary" onclick="showPage('login')">العودة لتسجيل الدخول</button>
+          <button id="verificationResendBtn" class="btn btn-primary" onclick="resendVerificationEmail()">إرسال رابط جديد</button>
         </div>
       </div>
     </section>
@@ -339,7 +383,7 @@
             </div>
             <div class="admin-table-wrap">
               <table class="admin-table" id="usersTable">
-                <thead><tr><th>اسم المستخدم</th><th>الرصيد</th><th>تاريخ الإنشاء</th></tr></thead>
+                <thead><tr><th>اسم المستخدم</th><th>البريد</th><th>الرصيد</th><th>الحالة</th><th>تاريخ الإنشاء</th></tr></thead>
                 <tbody></tbody>
               </table>
             </div>
@@ -366,6 +410,17 @@
               <input type="text" id="settingLoaderLogo" placeholder="https://...">
               <label>مدة شاشة التحميل بالثواني</label>
               <input type="number" id="settingLoaderSeconds" min="1" max="10" step="0.5" value="2.5">
+              <hr class="settings-divider">
+              <h4>إعدادات EmailJS لتفعيل البريد</h4>
+              <p class="settings-help">أنشئ Template في EmailJS وضع متغيرات: {{username}} و {{to_email}} و {{verification_link}} و {{verification_expiry_hours}}.</p>
+              <label>public_key</label>
+              <input type="text" id="settingEmailjsPublicKey" placeholder="EmailJS Public Key">
+              <label>service_id</label>
+              <input type="text" id="settingEmailjsServiceId" placeholder="service_xxxxxxx">
+              <label>template_verify_id</label>
+              <input type="text" id="settingEmailjsTemplateVerifyId" placeholder="template_xxxxxxx">
+              <label>verification_expiry (بالساعات)</label>
+              <input type="number" id="settingVerificationExpiry" min="1" max="168" step="1" value="24">
               <button class="btn btn-primary" onclick="saveSiteSettings()">حفظ الإعدادات</button>
             </div>
           </div>
