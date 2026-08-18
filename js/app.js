@@ -1,8 +1,8 @@
-/* ===== IDLEB STORE - Frontend App ===== */
+/* ===== IDLEB STORE - Full App with EmailJS OTP ===== */
 (function() {
   'use strict';
 
-  console.log('✅ IDLEB STORE is loading...');
+  console.log('✅ IDLEB STORE loading...');
 
   // ========== STORAGE KEYS ==========
   var KEYS = {
@@ -22,12 +22,19 @@
   var ADMIN_USER = 'admin';
   var ADMIN_PASS = 'Idleb@2025';
 
+  // ========== EMAILJS SETTINGS ==========
+  var EMAILJS_CONFIG = {
+    publicKey: '-MV0a0jjrdW0VbOML',
+    serviceId: 'service_y22dlbp',
+    templateId: 'template_ncqtx0e'
+  };
+
   // ========== HELPERS ==========
   function load(key, fallback) {
     try {
       var data = localStorage.getItem(key);
       return data ? JSON.parse(data) : fallback;
-    } catch (e) {
+    } catch(e) {
       return fallback;
     }
   }
@@ -36,8 +43,8 @@
     localStorage.setItem(key, JSON.stringify(value));
   }
 
-  function uid() {
-    return 'id_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  function uid(prefix) {
+    return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   }
 
   function toast(msg, isError) {
@@ -45,7 +52,7 @@
     if (!el) return;
     el.textContent = msg;
     el.className = 'toast show' + (isError ? ' error' : '');
-    setTimeout(function() { el.classList.remove('show'); }, 3000);
+    setTimeout(function() { el.classList.remove('show'); }, 3500);
   }
 
   function formatPrice(n) {
@@ -67,6 +74,10 @@
       other: 'خدمة أخرى'
     };
     return map[t] || t;
+  }
+
+  function generateOTP() {
+    return String(Math.floor(100000 + Math.random() * 900000));
   }
 
   // ========== DEFAULT DATA ==========
@@ -98,45 +109,22 @@
     { id: 'p18', name: 'شحن فري فاير', desc: 'شحن جواهر', price: 9, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 95, pricingNote: 'كل 1 وحدة = 9$' }
   ];
 
-  var DEFAULT_SETTINGS = {
-    emailjsPublicKey: '-MV0a0jjrdW0VbOML',
-    emailjsServiceId: 'service_y22dlbp',
-    emailjsTemplateVerifyId: 'template_ncqtx0e',
-    verificationExpiry: 24
-  };
-
   // ========== INIT DATA ==========
   function initData() {
-    if (!localStorage.getItem(KEYS.categories)) {
-      save(KEYS.categories, DEFAULT_CATEGORIES);
-    }
-    if (!localStorage.getItem(KEYS.products)) {
-      save(KEYS.products, DEFAULT_PRODUCTS);
-    }
-    if (!localStorage.getItem(KEYS.users)) {
-      save(KEYS.users, []);
-    }
-    if (!localStorage.getItem(KEYS.pendingUsers)) {
-      save(KEYS.pendingUsers, []);
-    }
-    if (!localStorage.getItem(KEYS.topups)) {
-      save(KEYS.topups, []);
-    }
-    if (!localStorage.getItem(KEYS.orders)) {
-      save(KEYS.orders, []);
-    }
-    if (!localStorage.getItem(KEYS.cart)) {
-      save(KEYS.cart, []);
-    }
-    if (!localStorage.getItem(KEYS.settings)) {
-      save(KEYS.settings, DEFAULT_SETTINGS);
-    }
+    if (!localStorage.getItem(KEYS.categories)) save(KEYS.categories, DEFAULT_CATEGORIES);
+    if (!localStorage.getItem(KEYS.products)) save(KEYS.products, DEFAULT_PRODUCTS);
+    if (!localStorage.getItem(KEYS.users)) save(KEYS.users, []);
+    if (!localStorage.getItem(KEYS.pendingUsers)) save(KEYS.pendingUsers, []);
+    if (!localStorage.getItem(KEYS.topups)) save(KEYS.topups, []);
+    if (!localStorage.getItem(KEYS.orders)) save(KEYS.orders, []);
+    if (!localStorage.getItem(KEYS.cart)) save(KEYS.cart, []);
   }
 
   // ========== STATE ==========
   var currentUser = null;
   var cart = [];
   var adminLoggedIn = false;
+  var pendingVerificationUser = null;
 
   function loadState() {
     currentUser = load(KEYS.currentUser, null);
@@ -168,31 +156,205 @@
     var badge = document.getElementById('cartBadge');
     if (badge) {
       var count = 0;
-      for (var i = 0; i < cart.length; i++) {
-        count += cart[i].qty;
-      }
+      for (var i = 0; i < cart.length; i++) count += cart[i].qty;
       badge.textContent = count;
     }
   }
 
-  function saveUser(user) {
-    var users = load(KEYS.users, []);
-    var found = false;
-    for (var i = 0; i < users.length; i++) {
-      if (users[i].username === user.username) {
-        users[i].balance = user.balance;
-        if (user.email) users[i].email = user.email;
-        found = true;
+  // ========== EMAILJS ==========
+  function initEmailJS() {
+    if (typeof emailjs === 'undefined') {
+      console.warn('EmailJS not loaded');
+      return false;
+    }
+    try {
+      emailjs.init({ publicKey: EMAILJS_CONFIG.publicKey });
+      return true;
+    } catch(e) {
+      console.error('EmailJS init error:', e);
+      return false;
+    }
+  }
+
+  window.sendVerificationEmail = async function(user) {
+    if (typeof emailjs === 'undefined') {
+      throw new Error('EmailJS library not loaded');
+    }
+    if (!user || !user.email) {
+      throw new Error('Email required');
+    }
+
+    var code = generateOTP();
+    var expiry = 24;
+    var expiresAt = new Date(Date.now() + expiry * 60 * 60 * 1000).toISOString();
+
+    // Save pending user
+    var pending = load(KEYS.pendingUsers, []);
+    var existing = null;
+    for (var i = 0; i < pending.length; i++) {
+      if (pending[i].email === user.email || pending[i].username === user.username) {
+        existing = pending[i];
         break;
       }
     }
-    if (!found) {
-      users.push(user);
+
+    var record = {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      verification_code: code,
+      expiresAt: expiresAt,
+      createdAt: new Date().toISOString()
+    };
+
+    if (existing) {
+      for (var key in record) {
+        existing[key] = record[key];
+      }
+    } else {
+      pending.push(record);
     }
+    save(KEYS.pendingUsers, pending);
+    pendingVerificationUser = record;
+
+    // Init EmailJS
+    if (!initEmailJS()) {
+      throw new Error('EmailJS init failed');
+    }
+
+    // Send email
+    var params = {
+      to_email: user.email,
+      email: user.email,
+      username: user.username,
+      name: user.username,
+      verification_code: code,
+      code: code,
+      otp: code,
+      expiry_hours: expiry
+    };
+
+    console.log('📧 Sending OTP to:', user.email, 'Code:', code);
+
+    try {
+      await emailjs.send(EMAILJS_CONFIG.serviceId, EMAILJS_CONFIG.templateId, params);
+      console.log('✅ Email sent successfully');
+    } catch(e) {
+      console.error('❌ Email send error:', e);
+      throw new Error('Failed to send email: ' + (e.text || e.message));
+    }
+
+    return { code: code, expiresAt: expiresAt };
+  };
+
+  window.verifyOTP = function() {
+    var code = document.getElementById('verificationCodeInput').value.trim();
+    var email = document.getElementById('authEmail').value.trim().toLowerCase();
+    var username = document.getElementById('authUsername').value.trim();
+
+    if (!code || code.length !== 6) {
+      toast('أدخل رمز التفعيل المكوّن من 6 أرقام', true);
+      return;
+    }
+
+    var pending = load(KEYS.pendingUsers, []);
+    var user = null;
+    var idx = -1;
+
+    for (var i = 0; i < pending.length; i++) {
+      if (pending[i].email === email || pending[i].username === username) {
+        user = pending[i];
+        idx = i;
+        break;
+      }
+    }
+
+    if (!user) {
+      toast('لم يتم العثور على حساب بانتظار التفعيل', true);
+      return;
+    }
+
+    // Check expiry
+    if (user.expiresAt && Date.now() > new Date(user.expiresAt).getTime()) {
+      toast('انتهت صلاحية الرمز، يرجى طلب رمز جديد', true);
+      return;
+    }
+
+    // Check code
+    if (String(user.verification_code) !== String(code)) {
+      toast('رمز التفعيل غير صحيح', true);
+      return;
+    }
+
+    // Move to verified users
+    var users = load(KEYS.users, []);
+    var newUser = {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      balance: 0,
+      isVerified: true,
+      verifiedAt: new Date().toISOString(),
+      createdAt: user.createdAt
+    };
+
+    // Check if already exists
+    var exists = false;
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === user.username || users[i].email === user.email) {
+        users[i] = newUser;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) users.push(newUser);
+
     save(KEYS.users, users);
-    currentUser = user;
+    
+    // Remove from pending
+    pending.splice(idx, 1);
+    save(KEYS.pendingUsers, pending);
+
+    // Hide verification box
+    document.getElementById('verificationCodeBox').classList.add('hidden');
+    document.getElementById('verificationRetryBox').classList.add('hidden');
+
+    toast('✅ تم تفعيل حسابك بنجاح! يمكنك تسجيل الدخول الآن');
+    
+    // Auto login
+    currentUser = { username: user.username, email: user.email, balance: 0 };
     save(KEYS.currentUser, currentUser);
-  }
+    updateUI();
+    showPage('home');
+  };
+
+  window.resendVerification = async function() {
+    var email = document.getElementById('authEmail').value.trim().toLowerCase();
+    var username = document.getElementById('authUsername').value.trim();
+
+    var pending = load(KEYS.pendingUsers, []);
+    var user = null;
+    for (var i = 0; i < pending.length; i++) {
+      if (pending[i].email === email || pending[i].username === username) {
+        user = pending[i];
+        break;
+      }
+    }
+
+    if (!user) {
+      toast('لم يتم العثور على حساب بانتظار التفعيل', true);
+      return;
+    }
+
+    try {
+      toast('جاري إرسال رمز جديد...');
+      await window.sendVerificationEmail(user);
+      toast('تم إرسال رمز جديد إلى بريدك الإلكتروني');
+    } catch(e) {
+      console.error(e);
+      toast('فشل إرسال البريد: ' + e.message, true);
+    }
+  };
 
   // ========== NAVIGATION ==========
   window.showPage = function(pageId, param) {
@@ -214,16 +376,12 @@
 
     if (pageId === 'admin') {
       if (adminLoggedIn) {
-        var loginEl = document.getElementById('adminLogin');
-        var panelEl = document.getElementById('adminPanel');
-        if (loginEl) loginEl.classList.add('hidden');
-        if (panelEl) panelEl.classList.remove('hidden');
+        document.getElementById('adminLogin').classList.add('hidden');
+        document.getElementById('adminPanel').classList.remove('hidden');
         switchAdminTab('stats');
       } else {
-        var loginEl2 = document.getElementById('adminLogin');
-        var panelEl2 = document.getElementById('adminPanel');
-        if (loginEl2) loginEl2.classList.remove('hidden');
-        if (panelEl2) panelEl2.classList.add('hidden');
+        document.getElementById('adminLogin').classList.remove('hidden');
+        document.getElementById('adminPanel').classList.add('hidden');
       }
     }
 
@@ -240,15 +398,11 @@
 
   // ========== RENDER HOME ==========
   function renderHome() {
-    console.log('🏠 Rendering home...');
-    
     var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var allProds = load(KEYS.products, []);
     var prods = [];
     for (var i = 0; i < allProds.length; i++) {
-      if (allProds[i].active) {
-        prods.push(allProds[i]);
-      }
+      if (allProds[i].active) prods.push(allProds[i]);
     }
     prods.sort(function(a, b) { return (b.sales || 0) - (a.sales || 0); });
     prods = prods.slice(0, 6);
@@ -259,9 +413,8 @@
       for (var i = 0; i < cats.length; i++) {
         var c = cats[i];
         html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
-        html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">';
-        html += '<div class="card-body"><h3>' + c.name + '</h3></div>';
-        html += '</div>';
+        html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '">';
+        html += '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
       }
       catGrid.innerHTML = html;
     }
@@ -277,27 +430,19 @@
   }
 
   function productCardHTML(p) {
-    var price = Number(p.price || 0);
-    var html = '<div class="product-card product-card-simple">';
-    html += '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '" loading="lazy">';
-    html += '<div class="card-body">';
-    html += '<span class="product-type">' + typeLabel(p.type) + '</span>';
-    html += '<h3>' + p.name + '</h3>';
-    html += '<p>' + (p.desc || '') + '</p>';
-    if (p.pricingNote) {
-      html += '<div class="pricing-note">' + p.pricingNote + '</div>';
-    } else {
-      html += '<div class="product-price">' + formatPrice(price) + '</div>';
-    }
-    html += '<button class="btn btn-primary btn-full" onclick="openProductDetail(\'' + p.id + '\')">عرض التفاصيل</button>';
-    html += '</div></div>';
-    return html;
+    return '<div class="product-card product-card-simple">' +
+      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '">' +
+      '<div class="card-body">' +
+      '<span class="product-type">' + typeLabel(p.type) + '</span>' +
+      '<h3>' + p.name + '</h3>' +
+      '<p>' + (p.desc || '') + '</p>' +
+      '<div class="product-price">' + formatPrice(p.price) + '</div>' +
+      '<button class="btn btn-primary btn-full" onclick="openProductDetail(\'' + p.id + '\')">عرض التفاصيل</button>' +
+      '</div></div>';
   }
 
   // ========== CATEGORIES ==========
   function renderCategories() {
-    console.log('📂 Rendering categories...');
-    
     var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var grid = document.getElementById('allCategories');
     if (!grid) return;
@@ -306,24 +451,17 @@
     for (var i = 0; i < cats.length; i++) {
       var c = cats[i];
       html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
-      html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" loading="lazy">';
-      html += '<div class="card-body"><h3>' + c.name + '</h3></div>';
-      html += '</div>';
+      html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '">';
+      html += '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
     }
     grid.innerHTML = html;
   }
 
-  // ========== CATEGORY PRODUCTS ==========
   function renderCategoryProducts(catId) {
-    console.log('📦 Rendering category products:', catId);
-    
     var cats = load(KEYS.categories, []);
     var cat = null;
     for (var i = 0; i < cats.length; i++) {
-      if (cats[i].id === catId) {
-        cat = cats[i];
-        break;
-      }
+      if (cats[i].id === catId) { cat = cats[i]; break; }
     }
     
     var titleEl = document.getElementById('categoryTitle');
@@ -341,7 +479,7 @@
     if (!grid) return;
 
     if (prods.length === 0) {
-      grid.innerHTML = '<p class="empty-state">لا توجد منتجات في هذا القسم حالياً</p>';
+      grid.innerHTML = '<p class="empty-state">لا توجد منتجات في هذا القسم</p>';
       return;
     }
 
@@ -669,8 +807,27 @@
     showPage('order-success');
   };
 
+  function saveUser(user) {
+    var users = load(KEYS.users, []);
+    var found = false;
+    for (var i = 0; i < users.length; i++) {
+      if (users[i].username === user.username) {
+        users[i].balance = user.balance;
+        if (user.email) users[i].email = user.email;
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      users.push(user);
+    }
+    save(KEYS.users, users);
+    currentUser = user;
+    save(KEYS.currentUser, currentUser);
+  }
+
   // ========== AUTH ==========
-  window.handleAuth = function(e) {
+  window.handleAuth = async function(e) {
     e.preventDefault();
     
     var username = document.getElementById('authUsername').value.trim();
@@ -678,7 +835,11 @@
     var password = document.getElementById('authPassword').value;
     var passwordConfirm = document.getElementById('authPasswordConfirm').value;
     
-    // Admin login
+    // Hide old verification boxes
+    document.getElementById('verificationCodeBox').classList.add('hidden');
+    document.getElementById('verificationRetryBox').classList.add('hidden');
+    
+    // ✅ ADMIN LOGIN - بدون بريد ولا OTP
     if (username === ADMIN_USER && password === ADMIN_PASS) {
       adminLoggedIn = true;
       sessionStorage.setItem(KEYS.adminSession, '1');
@@ -687,11 +848,13 @@
       return;
     }
     
+    // Validation
     if (!username) { toast('اسم المستخدم مطلوب', true); return; }
     if (!email) { toast('البريد الإلكتروني مطلوب', true); return; }
     if (password.length < 4) { toast('كلمة المرور 4 أحرف على الأقل', true); return; }
     if (password !== passwordConfirm) { toast('كلمتا المرور غير متطابقتين', true); return; }
     
+    // Check if user exists in verified users
     var users = load(KEYS.users, []);
     var user = null;
     for (var i = 0; i < users.length; i++) {
@@ -701,31 +864,66 @@
       }
     }
     
+    // If user exists in verified users
     if (user) {
       if (user.password !== password) {
         toast('كلمة المرور غير صحيحة', true);
         return;
       }
+      // Login
       currentUser = { username: user.username, email: user.email, balance: user.balance || 0 };
       save(KEYS.currentUser, currentUser);
       updateUI();
       toast('مرحباً ' + username);
       showPage('home');
-    } else {
-      var newUser = {
-        username: username,
-        email: email,
-        password: password,
-        balance: 0,
-        isVerified: true
-      };
-      users.push(newUser);
-      save(KEYS.users, users);
-      currentUser = { username: username, email: email, balance: 0 };
-      save(KEYS.currentUser, currentUser);
-      updateUI();
-      toast('تم إنشاء الحساب بنجاح');
-      showPage('home');
+      return;
+    }
+    
+    // Check if user is pending (waiting for verification)
+    var pending = load(KEYS.pendingUsers, []);
+    var pendingUser = null;
+    for (var i = 0; i < pending.length; i++) {
+      if (pending[i].username === username || pending[i].email === email) {
+        pendingUser = pending[i];
+        break;
+      }
+    }
+    
+    if (pendingUser) {
+      if (pendingUser.password !== password) {
+        toast('كلمة المرور غير صحيحة', true);
+        return;
+      }
+      // Show verification box
+      pendingVerificationUser = pendingUser;
+      document.getElementById('verificationCodeBox').classList.remove('hidden');
+      document.getElementById('verificationRetryBox').classList.remove('hidden');
+      document.getElementById('verificationRetryMessage').textContent = 
+        'تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
+      toast('أدخل رمز التفعيل المرسل إلى بريدك الإلكتروني');
+      return;
+    }
+    
+    // NEW USER - create pending and send OTP
+    var newUser = {
+      username: username,
+      email: email,
+      password: password
+    };
+    
+    try {
+      toast('جاري إرسال رمز التفعيل...');
+      await window.sendVerificationEmail(newUser);
+      
+      // Show verification box
+      document.getElementById('verificationCodeBox').classList.remove('hidden');
+      document.getElementById('verificationRetryBox').classList.remove('hidden');
+      document.getElementById('verificationRetryMessage').textContent = 
+        'تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
+      toast('✅ تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
+    } catch(e) {
+      console.error('Send error:', e);
+      toast('❌ فشل إرسال البريد: ' + e.message, true);
     }
   };
 
@@ -744,8 +942,7 @@
       showPage('login');
       return;
     }
-    var section = document.getElementById('topUpSection');
-    if (section) section.classList.remove('hidden');
+    document.getElementById('topUpSection').classList.remove('hidden');
   };
 
   window.submitTopUp = function(e) {
@@ -774,25 +971,19 @@
     save(KEYS.topups, topups);
     
     document.getElementById('topUpForm').reset();
-    var section = document.getElementById('topUpSection');
-    if (section) section.classList.add('hidden');
+    document.getElementById('topUpSection').classList.add('hidden');
     toast('تم استلام طلبك، سيتم مراجعته قريباً ✓');
   };
 
   // ========== ADMIN ==========
   window.switchAdminTab = function(tab) {
     var contents = document.querySelectorAll('.admin-tab-content');
-    for (var i = 0; i < contents.length; i++) {
-      contents[i].classList.remove('active');
-    }
+    for (var i = 0; i < contents.length; i++) contents[i].classList.remove('active');
     var btns = document.querySelectorAll('.tab-btn');
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.remove('active');
-    }
+    for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
     
     var content = document.getElementById('admin-' + tab);
     if (content) content.classList.add('active');
-    
     var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
     if (btn) btn.classList.add('active');
     
@@ -809,10 +1000,8 @@
     var orders = load(KEYS.orders, []);
     var topups = load(KEYS.topups, []);
     var users = load(KEYS.users, []);
-    
     var grid = document.getElementById('statsGrid');
     if (!grid) return;
-    
     grid.innerHTML = 
       '<div class="stat-card"><h4>المنتجات</h4><p>' + products.length + '</p></div>' +
       '<div class="stat-card"><h4>الطلبات</h4><p>' + orders.length + '</p></div>' +
@@ -824,7 +1013,6 @@
     var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var tbody = document.querySelector('#catsTable tbody');
     if (!tbody) return;
-    
     var html = '';
     for (var i = 0; i < cats.length; i++) {
       var c = cats[i];
@@ -842,7 +1030,6 @@
       if (cats[i].id === id) { c = cats[i]; break; }
     }
     if (!c) return;
-    
     var newName = prompt('اسم القسم الجديد:', c.name);
     if (newName !== null) c.name = newName.trim() || c.name;
     save(KEYS.categories, cats);
@@ -865,7 +1052,6 @@
   window.addCategory = function() {
     var name = document.getElementById('catName').value.trim();
     if (!name) { toast('أدخل اسم القسم', true); return; }
-    
     var cats = load(KEYS.categories, []);
     cats.push({ id: uid('cat'), name: name, image: '', order: cats.length + 1 });
     save(KEYS.categories, cats);
@@ -880,7 +1066,6 @@
     var cats = load(KEYS.categories, []);
     var tbody = document.querySelector('#prodsTable tbody');
     if (!tbody) return;
-    
     var html = '';
     for (var i = 0; i < products.length; i++) {
       var p = products[i];
@@ -898,10 +1083,7 @@
   window.toggleProduct = function(id) {
     var products = load(KEYS.products, []);
     for (var i = 0; i < products.length; i++) {
-      if (products[i].id === id) {
-        products[i].active = !products[i].active;
-        break;
-      }
+      if (products[i].id === id) { products[i].active = !products[i].active; break; }
     }
     save(KEYS.products, products);
     renderAdminProducts();
@@ -924,9 +1106,7 @@
     var price = Number(document.getElementById('prodPrice').value);
     var categoryId = document.getElementById('prodCategory').value;
     var type = document.getElementById('prodType').value;
-    
     if (!name || price < 0) { toast('بيانات غير مكتملة', true); return; }
-    
     var products = load(KEYS.products, []);
     products.push({
       id: uid('p'),
@@ -975,7 +1155,6 @@
     var topups = load(KEYS.topups, []).reverse();
     var tbody = document.querySelector('#topupsTable tbody');
     if (!tbody) return;
-    
     var html = '';
     for (var i = 0; i < topups.length; i++) {
       var t = topups[i];
@@ -993,7 +1172,6 @@
       if (topups[i].id === id) { t = topups[i]; break; }
     }
     if (!t || t.status !== 'pending') return;
-    
     t.status = 'approved';
     var users = load(KEYS.users, []);
     for (var i = 0; i < users.length; i++) {
@@ -1013,10 +1191,7 @@
   window.rejectTopup = function(id) {
     var topups = load(KEYS.topups, []);
     for (var i = 0; i < topups.length; i++) {
-      if (topups[i].id === id) {
-        topups[i].status = 'rejected';
-        break;
-      }
+      if (topups[i].id === id) { topups[i].status = 'rejected'; break; }
     }
     save(KEYS.topups, topups);
     renderAdminTopups();
@@ -1027,7 +1202,6 @@
     var orders = load(KEYS.orders, []).reverse();
     var tbody = document.querySelector('#ordersTable tbody');
     if (!tbody) return;
-    
     var html = '';
     for (var i = 0; i < orders.length; i++) {
       var o = orders[i];
@@ -1041,10 +1215,7 @@
   window.completeOrder = function(id) {
     var orders = load(KEYS.orders, []);
     for (var i = 0; i < orders.length; i++) {
-      if (orders[i].id === id) {
-        orders[i].status = 'approved';
-        break;
-      }
+      if (orders[i].id === id) { orders[i].status = 'approved'; break; }
     }
     save(KEYS.orders, orders);
     renderAdminOrders();
@@ -1056,7 +1227,6 @@
     var pending = load(KEYS.pendingUsers, []);
     var tbody = document.querySelector('#usersTable tbody');
     if (!tbody) return;
-    
     var html = '';
     for (var i = 0; i < users.length; i++) {
       var u = users[i];
@@ -1074,10 +1244,8 @@
     var settings = load(KEYS.settings, {});
     var photo = document.getElementById('ownerPhoto');
     if (photo) photo.src = settings.ownerPhoto || placeholderImg('MOOHAMED');
-    
     var name = document.getElementById('ownerName');
     if (name) name.textContent = settings.ownerName || 'MOOHAMED || IDLEB X';
-    
     var bio = document.getElementById('ownerBio');
     if (bio) bio.textContent = settings.ownerBio || 'صاحب ومشرف متجر IDLEB STORE';
   }
@@ -1087,19 +1255,15 @@
     try {
       var loader = document.getElementById('siteLoader');
       if (!loader) return;
-      
-      // Hide after 2.5 seconds
       setTimeout(function() {
         if (loader) loader.classList.add('hidden');
       }, 2500);
-      
-      // Safety: hide after 5 seconds
       setTimeout(function() {
         if (loader && !loader.classList.contains('hidden')) {
           loader.classList.add('hidden');
         }
       }, 5000);
-    } catch (e) {
+    } catch(e) {
       var loader = document.getElementById('siteLoader');
       if (loader) loader.classList.add('hidden');
     }
@@ -1131,22 +1295,12 @@
 
   // ========== BOOT ==========
   console.log('🚀 Booting IDLEB STORE...');
-  
   initData();
   loadState();
   handleHash();
   window.addEventListener('hashchange', handleHash);
   renderAbout();
   startLoader();
-
-  // Expose for debugging
-  window.IDLEB = {
-    load: load,
-    save: save,
-    KEYS: KEYS,
-    currentUser: function() { return currentUser; },
-    cart: function() { return cart; }
-  };
 
   console.log('✅ IDLEB STORE ready!');
 })();
