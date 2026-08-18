@@ -9,8 +9,32 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  
+  <!-- Emergency Loader Fix - يعمل حتى لو فشل تحميل app.js -->
+  <script>
+    (function() {
+      // إخفاء شاشة التحميل بعد 2.5 ثانية
+      setTimeout(function() {
+        var loader = document.getElementById('siteLoader');
+        if (loader) {
+          loader.classList.add('hidden');
+          console.log('✅ Loader hidden (timeout 1)');
+        }
+      }, 2500);
+      
+      // تأمين إضافي: إخفاء بعد 4 ثواني كحد أقصى
+      setTimeout(function() {
+        var loader = document.getElementById('siteLoader');
+        if (loader && !loader.classList.contains('hidden')) {
+          loader.classList.add('hidden');
+          console.log('✅ Loader hidden (timeout 2 - emergency)');
+        }
+      }, 4000);
+    })();
+  </script>
 </head>
 <body>
+  <!-- شاشة التحميل -->
   <div id="siteLoader" class="site-loader">
     <div class="loader-inner">
       <img id="loaderLogo" src="" alt="IDLEB STORE" class="loader-logo">
@@ -18,6 +42,7 @@
       <p>جاري تحميل IDLEB STORE...</p>
     </div>
   </div>
+  
   <!-- Navbar -->
   <nav class="navbar" id="navbar">
     <div class="nav-container">
@@ -388,6 +413,7 @@
               </table>
             </div>
           </div>
+          
           <!-- SETTINGS -->
           <div id="admin-settings" class="admin-tab-content">
             <div class="admin-form settings-form">
@@ -412,7 +438,7 @@
               <input type="number" id="settingLoaderSeconds" min="1" max="10" step="0.5" value="2.5">
               <hr class="settings-divider">
               <h4>إعدادات EmailJS لتفعيل البريد</h4>
-              <p class="settings-help">أنشئ Template في EmailJS وضع متغيرات: {{username}} و {{to_email}} و {{verification_link}} و {{verification_expiry_hours}}.</p>
+              <p class="settings-help">أنشئ Template في EmailJS وضع متغيرات: {{username}} و {{to_email}} و {{verification_code}} و {{expiry_hours}}.</p>
               <label>public_key</label>
               <input type="text" id="settingEmailjsPublicKey" placeholder="EmailJS Public Key">
               <label>service_id</label>
