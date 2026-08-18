@@ -7,6 +7,7 @@
     categories: 'idleb_categories',
     products: 'idleb_products',
     users: 'idleb_users',
+    pendingUsers: 'idleb_pending_users',
     currentUser: 'idleb_current_user',
     cart: 'idleb_cart',
     topups: 'idleb_topups',
@@ -18,7 +19,7 @@
   // Simple hash for admin password (not real security, just obfuscation)
   const ADMIN_USER = 'admin';
   const ADMIN_HASH = btoa('Idleb@2025');
-  const ADMIN_DISPLAY_NAME = 'MOOHAMED || IDLEB X'; // base64
+  const ADMIN_DISPLAY_NAME = 'MOOHAMED || IDLEB X';
 
   // ========== Default Data ==========
   const DEFAULT_CATEGORIES = [
@@ -29,24 +30,20 @@
   ];
 
   const DEFAULT_PRODUCTS = [
-    // تبنيد
     { id: 'p1', name: 'تبنيد انستغرام', desc: 'حسابات انستغرام جاهزة ومضمونة', price: 15, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 42 },
     { id: 'p2', name: 'تبنيد فيسبوك', desc: 'حسابات فيسبوك قديمة وموثقة', price: 12, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 35 },
     { id: 'p3', name: 'تبنيد تليجرام', desc: 'أرقام تليجرام جاهزة', price: 10, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 28 },
     { id: 'p4', name: 'تبنيد واتساب', desc: 'أرقام واتساب مع تحقق', price: 18, image: '', categoryId: 'cat1', type: 'accounts', active: true, sales: 50 },
-    // فك باند
     { id: 'p5', name: 'فك باند انستغرام', desc: 'فك حظر انستغرام بشكل دائم', price: 25, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 60 },
     { id: 'p6', name: 'فك باند واتساب', desc: 'استعادة رقم واتساب محظور', price: 30, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 45 },
     { id: 'p7', name: 'فك باند فيسبوك', desc: 'فك حظر حسابات فيسبوك', price: 22, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 33 },
     { id: 'p8', name: 'فك باند تليجرام', desc: 'فك حظر قنوات وحسابات تليجرام', price: 20, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 20 },
     { id: 'p9', name: 'فك باند تيك توك', desc: 'استعادة حسابات تيك توك', price: 28, image: '', categoryId: 'cat2', type: 'unban', active: true, sales: 38 },
-    // الرشق — كل خدمة مستقلة وتسعيرها حسب الكمية
     { id: 'p10', name: 'رشق متابعين انستغرام', desc: 'متابعين حقيقيين — كل 1000 متابع بسعر مستقل', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 90, pricingNote: 'كل 1000 متابع = 2$' },
     { id: 'p11', name: 'رشق تفاعل انستغرام', desc: 'تفاعل مستقل (إعجابات/تفاعل) حسب الكمية', price: 1.5, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_engagement', active: true, sales: 55, pricingNote: 'كل 1000 تفاعل = 1.5$' },
     { id: 'p12', name: 'رشق مشاهدات', desc: 'مشاهدات مستقلة حسب الكمية', price: 1, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_views', active: true, sales: 40, pricingNote: 'كل 1000 مشاهدة = 1$' },
     { id: 'p13', name: 'رشق متابعين تيك توك', desc: 'متابعين مستقلين حسب الكمية', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 75, pricingNote: 'كل 1000 متابع = 2$' },
     { id: 'p14', name: 'رشق أعضاء تليجرام', desc: 'أعضاء مستقلون حسب الكمية', price: 2, unitSize: 1000, image: '', categoryId: 'cat3', type: 'boost_followers', active: true, sales: 30, pricingNote: 'كل 1000 عضو = 2$' },
-    // ألعاب
     { id: 'p15', name: 'شحن ببجي', desc: 'شحن UC ببجي موبايل', price: 10, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 120, pricingNote: 'كل 1 وحدة = 10$' },
     { id: 'p16', name: 'شحن لودو', desc: 'شحن عملات لودو ستار', price: 8, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 65, pricingNote: 'كل 1 وحدة = 8$' },
     { id: 'p17', name: 'شحن جواكر', desc: 'شحن عملات جواكر', price: 7, unitSize: 1, image: '', categoryId: 'cat4', type: 'games', active: true, sales: 48, pricingNote: 'كل 1 وحدة = 7$' },
@@ -62,7 +59,11 @@
     ownerName: 'MOOHAMED || IDLEB X',
     ownerBio: 'صاحب ومشرف متجر IDLEB STORE — نوفر خدمات رقمية باحترافية وسرعة، مع متابعة مباشرة للطلبات وخدمة عملاء واضحة.',
     loaderLogo: '',
-    loaderSeconds: 2.5
+    loaderSeconds: 2.5,
+    emailjsPublicKey: '-MV0a0jjrdW0VbOML',
+    emailjsServiceId: 'service_y22dlbp',
+    emailjsTemplateVerifyId: 'template_ncqtx0e',
+    verificationExpiry: 24
   };
 
   // ========== Helpers ==========
@@ -85,6 +86,7 @@
 
   function toast(msg, isError = false) {
     const el = document.getElementById('toast');
+    if (!el) return;
     el.textContent = msg;
     el.className = 'toast show' + (isError ? ' error' : '');
     setTimeout(() => el.classList.remove('show'), 3200);
@@ -120,6 +122,186 @@
     return h;
   }
 
+  function isVerifiedUser(user = currentUser) {
+    return !!(user && user.isVerified !== false);
+  }
+
+  function requireVerifiedUser(action = 'شراء المنتجات') {
+    if (!currentUser) {
+      toast('يجب تسجيل الدخول أولاً', true);
+      showPage('login');
+      return false;
+    }
+    if (!isVerifiedUser()) {
+      toast('يرجى تفعيل حسابك أولاً', true);
+      showPage('login');
+      return false;
+    }
+    return true;
+  }
+
+  function verificationExpiryHours() {
+    const settings = load(STORAGE.settings, DEFAULT_SETTINGS);
+    return Math.min(168, Math.max(1, Number(settings.verificationExpiry) || 24));
+  }
+
+  function initEmailJS() {
+    const settings = load(STORAGE.settings, DEFAULT_SETTINGS);
+    if (!window.emailjs || !settings.emailjsPublicKey) return false;
+    try {
+      window.emailjs.init({ publicKey: settings.emailjsPublicKey });
+      return true;
+    } catch (error) {
+      console.error('EmailJS init failed:', error);
+      return false;
+    }
+  }
+
+  // ========== Send 6-digit OTP verification code ==========
+  window.sendVerificationEmail = async function(user) {
+    const settings = load(STORAGE.settings, DEFAULT_SETTINGS);
+    if (!settings.emailjsPublicKey || !settings.emailjsServiceId || !settings.emailjsTemplateVerifyId) {
+      throw new Error('EMAILJS_NOT_CONFIGURED');
+    }
+    if (!window.emailjs) throw new Error('EMAILJS_LIBRARY_NOT_LOADED');
+    if (!user || !user.email) throw new Error('EMAIL_REQUIRED');
+
+    const expiry = verificationExpiryHours();
+    const verificationCode = String(Math.floor(100000 + Math.random() * 900000));
+    
+    console.log('✅ Verification Code Generated:', verificationCode);
+    
+    const createdAt = new Date().toISOString();
+    const expiresAt = new Date(Date.now() + expiry * 60 * 60 * 1000).toISOString();
+    const pending = load(STORAGE.pendingUsers, []);
+    const idx = pending.findIndex(u => u.username === user.username || (u.email && u.email.toLowerCase() === user.email.toLowerCase()));
+    const old = idx >= 0 ? pending[idx] : {};
+    const record = {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      balance: Number(user.balance || 0),
+      verification_code: verificationCode,
+      createdAt,
+      expiresAt,
+      codeAttempts: 0
+    };
+    if (idx >= 0) pending[idx] = { ...old, ...record }; else pending.push(record);
+    save(STORAGE.pendingUsers, pending);
+    pendingVerificationUser = record;
+
+    if (!initEmailJS()) throw new Error('EMAILJS_INIT_FAILED');
+
+    const params = {
+      to_email: user.email,
+      email: user.email,
+      user_email: user.email,
+      reply_to: user.email,
+      username: user.username,
+      name: user.username,
+      verification_code: verificationCode,
+      code: verificationCode,
+      otp: verificationCode,
+      verification_expiry_hours: expiry,
+      expiry_hours: expiry,
+      site_name: 'IDLEB STORE'
+    };
+
+    console.log('📧 Sending email with params:', params);
+
+    try {
+      const response = await window.emailjs.send(
+        settings.emailjsServiceId, 
+        settings.emailjsTemplateVerifyId, 
+        params
+      );
+      console.log('✅ Email sent successfully:', response);
+    } catch (error) {
+      console.error('❌ EmailJS send failed:', error);
+      const detail = error?.text || error?.message || String(error);
+      throw new Error('EMAILJS_SEND_FAILED: ' + detail);
+    }
+
+    return { verificationCode, expiresAt };
+  };
+
+  let pendingVerificationUser = null;
+
+  function showVerificationRetry(message, user) {
+    pendingVerificationUser = user || pendingVerificationUser;
+    const box = document.getElementById('verificationRetryBox');
+    const text = document.getElementById('verificationRetryMessage');
+    if (box) box.classList.remove('hidden');
+    if (text) text.textContent = message;
+  }
+
+  window.resendVerificationEmail = async function() {
+    const email = (document.getElementById('authEmail')?.value || pendingVerificationUser?.email || '').trim().toLowerCase();
+    const username = (document.getElementById('authUsername')?.value || pendingVerificationUser?.username || '').trim();
+    const pending = load(STORAGE.pendingUsers, []);
+    const user = pending.find(u => (email && u.email?.toLowerCase() === email) || (username && u.username === username)) || pendingVerificationUser;
+    if (!user) {
+      toast('أدخل اسم المستخدم والبريد الإلكتروني للحساب غير المفعل', true);
+      return;
+    }
+    try {
+      toast('جاري إرسال رمز تحقق جديد...');
+      await window.sendVerificationEmail(user);
+      showVerificationRetry('تم إرسال رمز جديد إلى بريدك الإلكتروني. أدخل الرمز المكوّن من 6 أرقام.', user);
+      toast('تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
+    } catch (error) {
+      console.error(error);
+      showVerificationRetry('تعذر إرسال رمز التفعيل. تأكد أن قالب EmailJS يحتوي على {{verification_code}} وأن خانة To تستخدم {{to_email}} ثم حاول مرة أخرى.', user);
+      toast('فشل إرسال البريد. راجع إعدادات EmailJS', true);
+    }
+  };
+
+  window.verifyEmailCode = function() {
+    const code = (document.getElementById('verificationCodeInput')?.value || '').replace(/\D/g, '').trim();
+    const email = (document.getElementById('authEmail')?.value || pendingVerificationUser?.email || '').trim().toLowerCase();
+    const username = (document.getElementById('authUsername')?.value || pendingVerificationUser?.username || '').trim();
+    if (!/^\d{6}$/.test(code)) return toast('أدخل رمز التفعيل المكوّن من 6 أرقام', true);
+
+    const pending = load(STORAGE.pendingUsers, []);
+    const idx = pending.findIndex(u => (email && u.email?.toLowerCase() === email) || (username && u.username === username));
+    if (idx < 0) return toast('لم يتم العثور على حساب بانتظار التفعيل', true);
+    const user = pending[idx];
+
+    if (user.expiresAt && Date.now() > new Date(user.expiresAt).getTime()) {
+      showVerificationRetry('انتهت صلاحية رمز التفعيل، اضغط إعادة إرسال للحصول على رمز جديد.', user);
+      return toast('انتهت صلاحية رمز التفعيل، يرجى طلب رمز جديد', true);
+    }
+    if (String(user.verification_code) !== code) {
+      user.codeAttempts = Number(user.codeAttempts || 0) + 1;
+      pending[idx] = user;
+      save(STORAGE.pendingUsers, pending);
+      return toast('رمز التفعيل غير صحيح', true);
+    }
+
+    const users = load(STORAGE.users, []);
+    const cleanUser = {
+      username: user.username,
+      email: user.email,
+      password: user.password,
+      balance: Number(user.balance || 0),
+      isVerified: true,
+      verifiedAt: new Date().toISOString()
+    };
+    const existing = users.findIndex(u => u.username === user.username || (u.email && u.email.toLowerCase() === user.email.toLowerCase()));
+    if (existing >= 0) users[existing] = { ...users[existing], ...cleanUser };
+    else users.push(cleanUser);
+    save(STORAGE.users, users);
+    save(STORAGE.pendingUsers, pending.filter((_, i) => i !== idx));
+    pendingVerificationUser = null;
+    const retry = document.getElementById('verificationRetryBox');
+    if (retry) retry.classList.add('hidden');
+    const codeBox = document.getElementById('verificationCodeBox');
+    if (codeBox) codeBox.classList.add('hidden');
+    toast('تم تفعيل حسابك بنجاح! يمكنك تسجيل الدخول الآن');
+    const confirm = document.getElementById('authPasswordConfirm');
+    if (confirm) confirm.value = '';
+  };
+
   // ========== Init Data ==========
   function initData() {
     if (!localStorage.getItem(STORAGE.categories)) {
@@ -131,6 +313,9 @@
     if (!localStorage.getItem(STORAGE.users)) {
       save(STORAGE.users, []);
     }
+    if (!localStorage.getItem(STORAGE.pendingUsers)) {
+      save(STORAGE.pendingUsers, []);
+    }
     if (!localStorage.getItem(STORAGE.topups)) {
       save(STORAGE.topups, []);
     }
@@ -140,8 +325,16 @@
     if (!localStorage.getItem(STORAGE.cart)) {
       save(STORAGE.cart, []);
     }
-    if (!localStorage.getItem(STORAGE.settings)) {
+    const storedSettings = load(STORAGE.settings, null);
+    if (!storedSettings) {
       save(STORAGE.settings, DEFAULT_SETTINGS);
+    } else {
+      const mergedSettings = { ...DEFAULT_SETTINGS, ...storedSettings };
+      if (!storedSettings.emailjsPublicKey) mergedSettings.emailjsPublicKey = DEFAULT_SETTINGS.emailjsPublicKey;
+      if (!storedSettings.emailjsServiceId) mergedSettings.emailjsServiceId = DEFAULT_SETTINGS.emailjsServiceId;
+      if (!storedSettings.emailjsTemplateVerifyId) mergedSettings.emailjsTemplateVerifyId = DEFAULT_SETTINGS.emailjsTemplateVerifyId;
+      if (!storedSettings.verificationExpiry) mergedSettings.verificationExpiry = DEFAULT_SETTINGS.verificationExpiry;
+      save(STORAGE.settings, mergedSettings);
     }
   }
 
@@ -183,6 +376,9 @@
       if (walletBal) walletBal.textContent = '0 $';
     }
 
+    const walletNotice = document.getElementById('walletVerificationNotice');
+    if (walletNotice) walletNotice.classList.toggle('hidden', !currentUser || isVerifiedUser());
+
     const badge = document.getElementById('cartBadge');
     const count = cart.reduce((s, i) => s + i.qty, 0);
     badge.textContent = count;
@@ -194,10 +390,8 @@
     const page = document.getElementById('page-' + pageId);
     if (page) page.classList.add('active');
 
-    // close mobile menu
     document.getElementById('navLinks').classList.remove('open');
 
-    // special handlers
     if (pageId === 'home') renderHome();
     if (pageId === 'categories') renderCategories();
     if (pageId === 'category' && param) renderCategoryProducts(param);
@@ -219,7 +413,6 @@
       }
     }
 
-    // update hash without reload
     if (pageId === 'category' && param) {
       history.replaceState(null, '', '#category/' + param);
     } else if (pageId === 'product-detail' && param) {
@@ -239,21 +432,24 @@
     const prods = load(STORAGE.products, []).filter(p => p.active).sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 6);
 
     const catGrid = document.getElementById('homeCategories');
-    catGrid.innerHTML = cats.map(c => `
-      <div class="category-card" onclick="showPage('category', '${c.id}')">
-        <img src="${c.image || placeholderImg(c.name)}" alt="${c.name}" loading="lazy">
-        <div class="card-body">
-          <h3>${c.name}</h3>
+    if (catGrid) {
+      catGrid.innerHTML = cats.map(c => `
+        <div class="category-card" onclick="showPage('category', '${c.id}')">
+          <img src="${c.image || placeholderImg(c.name)}" alt="${c.name}" loading="lazy">
+          <div class="card-body">
+            <h3>${c.name}</h3>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `).join('');
+    }
 
     const best = document.getElementById('bestSellers');
-    best.innerHTML = prods.map(p => productCardHTML(p)).join('');
+    if (best) {
+      best.innerHTML = prods.map(p => productCardHTML(p)).join('');
+    }
   }
 
   function productCardHTML(p) {
-    const boost = ['boost_followers','boost_engagement','boost_views'].includes(p.type);
     const price = Number(p.price || 0);
     return `
       <div class="product-card product-card-simple" onclick="openProductDetail('${p.id}')">
@@ -269,26 +465,18 @@
     `;
   }
 
-  window.updateBoostPrice = function(id, unitPrice, unitSize) {
-    const input = document.getElementById('qty-' + id);
-    const out = document.getElementById('price-' + id);
-    if (!input || !out) return;
-    let qty = Math.max(unitSize, Number(input.value) || unitSize);
-    qty = Math.ceil(qty / unitSize) * unitSize;
-    input.value = qty;
-    out.textContent = 'السعر: ' + formatPrice((qty / unitSize) * unitPrice);
-  };
-
-
   // ========== Categories ==========
   function renderCategories() {
     const cats = load(STORAGE.categories, []).sort((a, b) => a.order - b.order);
-    document.getElementById('allCategories').innerHTML = cats.map(c => `
-      <div class="category-card" onclick="showPage('category', '${c.id}')">
-        <img src="${c.image || placeholderImg(c.name)}" alt="${c.name}" loading="lazy">
-        <div class="card-body"><h3>${c.name}</h3></div>
-      </div>
-    `).join('');
+    const grid = document.getElementById('allCategories');
+    if (grid) {
+      grid.innerHTML = cats.map(c => `
+        <div class="category-card" onclick="showPage('category', '${c.id}')">
+          <img src="${c.image || placeholderImg(c.name)}" alt="${c.name}" loading="lazy">
+          <div class="card-body"><h3>${c.name}</h3></div>
+        </div>
+      `).join('');
+    }
   }
 
   function getPlatformName(name) {
@@ -308,9 +496,12 @@
   function renderCategoryProducts(catId) {
     const cats = load(STORAGE.categories, []);
     const cat = cats.find(c => c.id === catId);
-    document.getElementById('categoryTitle').textContent = cat ? cat.name : 'المنتجات';
+    const titleEl = document.getElementById('categoryTitle');
+    if (titleEl) titleEl.textContent = cat ? cat.name : 'المنتجات';
+    
     const prods = load(STORAGE.products, []).filter(p => p.categoryId === catId && p.active);
     const grid = document.getElementById('categoryProducts');
+    if (!grid) return;
 
     if (catId === 'cat3') {
       const groups = [];
@@ -350,6 +541,7 @@
     const products = getPlatformProducts(platform);
     if (!products.length) return toast('لا توجد خدمات لهذا المنتج حالياً', true);
     const content = document.getElementById('productDetailContent');
+    if (!content) return;
     content.innerHTML = `
       <div class="detail-hero-card">
         <div>
@@ -399,6 +591,7 @@
   function renderPlatformPage(platform) {
     const products = getPlatformProducts(platform);
     const content = document.getElementById('productDetailContent');
+    if (!content) return;
     if (!products.length) { content.innerHTML = '<p class="empty-state">الخدمة غير متاحة حالياً</p>'; return; }
     content.innerHTML = `
       <div class="detail-hero-card">
@@ -411,6 +604,7 @@
 
   function renderSingleProductDetail(p) {
     const content = document.getElementById('productDetailContent');
+    if (!content) return;
     content.innerHTML = `
       <div class="detail-hero-card product-detail-head">
         <img src="${p.image || placeholderImg(p.name)}" alt="${p.name}">
@@ -466,6 +660,7 @@
   }
 
   window.submitDetailOrder = function(productId) {
+    if (!requireVerifiedUser()) return;
     const p = load(STORAGE.products, []).find(x => x.id === productId && x.active);
     if (!p) return;
     if (!currentUser) { toast('سجّل الدخول أولاً لإرسال الطلب', true); showPage('login'); return; }
@@ -495,17 +690,8 @@
     return { label: 'بيانات التنفيذ', placeholder: 'اكتب أي معلومات يحتاجها الإدمن لتنفيذ الخدمة', kind: 'text', required: true };
   }
 
-  function getProductQuantity(product) {
-    const quantityBased = ['boost_followers','boost_engagement','boost_views','games'].includes(product.type);
-    const unit = Number(product.unitSize || 1);
-    if (!quantityBased) return { quantity: 1, total: Number(product.price || 0), unit };
-    const input = document.getElementById('qty-' + product.id);
-    let quantity = Math.max(unit, Number(input && input.value) || unit);
-    quantity = Math.ceil(quantity / unit) * unit;
-    return { quantity, total: (quantity / unit) * Number(product.price || 0), unit };
-  }
-
   window.openQuickOrder = function(productId) {
+    if (!requireVerifiedUser()) return;
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
@@ -517,6 +703,7 @@
     const q = getProductQuantity(p);
     const meta = targetMeta(p.type);
     const modal = document.getElementById('quickOrderModal');
+    if (!modal) return;
     document.getElementById('quickOrderTitle').textContent = p.name;
     document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة وسيتم إرسال الطلب مباشرة إلى لوحة التحكم.';
     document.getElementById('quickOrderTotal').textContent = formatPrice(q.total);
@@ -539,7 +726,8 @@
     let q = Math.max(unitSize, Number(input.value) || unitSize);
     q = Math.ceil(q / unitSize) * unitSize;
     input.value = q;
-    document.getElementById('quickOrderTotal').textContent = formatPrice((q / unitSize) * unitPrice);
+    const totalEl = document.getElementById('quickOrderTotal');
+    if (totalEl) totalEl.textContent = formatPrice((q / unitSize) * unitPrice);
   };
 
   document.addEventListener('input', (event) => {
@@ -550,7 +738,10 @@
     }
   });
 
-  window.closeQuickOrder = function() { document.getElementById('quickOrderModal').classList.add('hidden'); };
+  window.closeQuickOrder = function() { 
+    const modal = document.getElementById('quickOrderModal');
+    if (modal) modal.classList.add('hidden');
+  };
 
   window.submitQuickOrder = function() {
     if (!currentUser) return closeQuickOrder();
@@ -589,8 +780,19 @@
     showPage('order-success');
   };
 
+  function getProductQuantity(product) {
+    const quantityBased = ['boost_followers','boost_engagement','boost_views','games'].includes(product.type);
+    const unit = Number(product.unitSize || 1);
+    if (!quantityBased) return { quantity: 1, total: Number(product.price || 0), unit };
+    const input = document.getElementById('qty-' + product.id);
+    let quantity = Math.max(unit, Number(input && input.value) || unit);
+    quantity = Math.ceil(quantity / unit) * unit;
+    return { quantity, total: (quantity / unit) * Number(product.price || 0), unit };
+  }
+
   // ========== Cart ==========
   window.addToCart = function (productId) {
+    if (!requireVerifiedUser()) return;
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
@@ -625,40 +827,43 @@
     toast('تمت الإضافة إلى السلة ✓');
   };
 
-
   function renderCart() {
     const empty = document.getElementById('cartEmpty');
     const content = document.getElementById('cartContent');
     if (!cart.length) {
-      empty.classList.remove('hidden');
-      content.classList.add('hidden');
+      if (empty) empty.classList.remove('hidden');
+      if (content) content.classList.add('hidden');
       return;
     }
-    empty.classList.add('hidden');
-    content.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+    if (content) content.classList.remove('hidden');
 
     let total = 0;
-    document.getElementById('cartItems').innerHTML = cart.map((item, idx) => {
-      total += Number(item.lineTotal != null ? item.lineTotal : item.price * item.qty);
-      return `
-        <div class="cart-item">
-          <img src="${item.image || placeholderImg(item.name)}" alt="">
-          <div class="cart-item-info">
-            <h4>${item.name}</h4>
-            <div class="product-price">${formatPrice(item.lineTotal != null ? item.lineTotal : item.price * item.qty)}</div>
-            ${item.quantity ? `<small>الكمية: ${Number(item.quantity).toLocaleString('en-US')}</small>` : ''}
-            ${(['accounts','unban','boost_followers','boost_engagement','boost_views'].includes(item.serviceType) || item.serviceType === 'games' || item.serviceType === 'other') ? `<div class="form-group order-target-field"><label>${targetMeta(item.serviceType).label} <span class="required">*</span></label><input type="${targetMeta(item.serviceType).kind}" id="target-${idx}" value="${item.targetUrl || ''}" placeholder="${targetMeta(item.serviceType).placeholder}" required></div>` : ''}
+    const itemsEl = document.getElementById('cartItems');
+    if (itemsEl) {
+      itemsEl.innerHTML = cart.map((item, idx) => {
+        total += Number(item.lineTotal != null ? item.lineTotal : item.price * item.qty);
+        return `
+          <div class="cart-item">
+            <img src="${item.image || placeholderImg(item.name)}" alt="">
+            <div class="cart-item-info">
+              <h4>${item.name}</h4>
+              <div class="product-price">${formatPrice(item.lineTotal != null ? item.lineTotal : item.price * item.qty)}</div>
+              ${item.quantity ? `<small>الكمية: ${Number(item.quantity).toLocaleString('en-US')}</small>` : ''}
+              ${(['accounts','unban','boost_followers','boost_engagement','boost_views'].includes(item.serviceType) || item.serviceType === 'games' || item.serviceType === 'other') ? `<div class="form-group order-target-field"><label>${targetMeta(item.serviceType).label} <span class="required">*</span></label><input type="${targetMeta(item.serviceType).kind}" id="target-${idx}" value="${item.targetUrl || ''}" placeholder="${targetMeta(item.serviceType).placeholder}" required></div>` : ''}
+            </div>
+            <div class="cart-item-actions">
+              <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
+              <span>${item.qty}</span>
+              <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
+              <button class="btn btn-danger btn-sm" onclick="removeFromCart(${idx})">حذف</button>
+            </div>
           </div>
-          <div class="cart-item-actions">
-            <button class="qty-btn" onclick="changeQty(${idx}, -1)">−</button>
-            <span>${item.qty}</span>
-            <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
-            <button class="btn btn-danger btn-sm" onclick="removeFromCart(${idx})">حذف</button>
-          </div>
-        </div>
-      `;
-    }).join('');
-    document.getElementById('cartTotal').textContent = formatPrice(total);
+        `;
+      }).join('');
+    }
+    const totalEl = document.getElementById('cartTotal');
+    if (totalEl) totalEl.textContent = formatPrice(total);
   }
 
   window.changeQty = function (idx, delta) {
@@ -684,6 +889,7 @@
   };
 
   window.checkout = function () {
+    if (!requireVerifiedUser('إتمام الطلب')) return;
     if (!currentUser) { toast('يجب تسجيل الدخول', true); showPage('login'); return; }
     if (!cart.length) return;
     const whatsappEl = document.getElementById('orderWhatsapp');
@@ -719,14 +925,17 @@
     showPage('order-success');
   };
 
-
   // ========== Auth ==========
-  window.handleAuth = function (e) {
+  window.handleAuth = async function (e) {
     e.preventDefault();
     const username = document.getElementById('authUsername').value.trim();
+    const email = document.getElementById('authEmail').value.trim().toLowerCase();
     const password = document.getElementById('authPassword').value;
+    const passwordConfirm = document.getElementById('authPasswordConfirm').value;
+    const retryBox = document.getElementById('verificationRetryBox');
+    if (retryBox) retryBox.classList.add('hidden');
 
-    // Admin can enter through the normal login screen — no URL change required.
+    // ✅ ADMIN LOGIN - دخول الإدمن (لا يحتاج بريد إلكتروني)
     if (username === ADMIN_USER && btoa(password) === ADMIN_HASH) {
       adminLoggedIn = true;
       sessionStorage.setItem(STORAGE.adminSession, '1');
@@ -738,31 +947,61 @@
       return;
     }
 
-    let users = load(STORAGE.users, []);
-    let user = users.find(u => u.username === username);
+    // ✅ التحقق من الحقول للمستخدمين العاديين
+    if (!username) return toast('اسم المستخدم مطلوب', true);
+    if (!email) return toast('البريد الإلكتروني مطلوب', true);
+    if (password.length < 4) return toast('كلمة المرور يجب أن تكون 4 أحرف على الأقل', true);
+    if (password !== passwordConfirm) return toast('كلمتا المرور غير متطابقتين', true);
+
+    const users = load(STORAGE.users, []);
+    const pendingUsers = load(STORAGE.pendingUsers, []);
+    const user = users.find(u => u.username === username || (u.email && u.email.toLowerCase() === email));
+    const pending = pendingUsers.find(u => u.username === username || (u.email && u.email.toLowerCase() === email));
 
     if (user) {
-      if (user.password !== btoa(password)) {
-        toast('كلمة المرور غير صحيحة', true);
+      if (user.email && user.email.toLowerCase() !== email) return toast('البريد الإلكتروني لا يطابق الحساب', true);
+      if (user.password !== btoa(password)) return toast('كلمة المرور غير صحيحة', true);
+      if (user.isVerified === false) {
+        pendingVerificationUser = pending || { username: user.username, email: user.email, password: user.password, balance: user.balance || 0 };
+        toast('يرجى تفعيل حسابك عبر البريد الإلكتروني', true);
+        showVerificationRetry('حسابك غير مفعل. أدخل رمز التفعيل الذي وصلك إلى بريدك الإلكتروني أو أعد إرساله.', pendingVerificationUser);
+        const box = document.getElementById('verificationCodeBox');
+        if (box) box.classList.remove('hidden');
         return;
       }
-    } else {
-      user = {
-        username,
-        password: btoa(password),
-        balance: 0,
-        createdAt: new Date().toISOString()
-      };
-      users.push(user);
-      save(STORAGE.users, users);
-      toast('تم إنشاء الحساب بنجاح');
+      currentUser = { username: user.username, email: user.email, balance: user.balance || 0, isVerified: true };
+      save(STORAGE.currentUser, currentUser);
+      updateUI();
+      toast('مرحباً ' + username);
+      showPage('home');
+      return;
     }
 
-    currentUser = { username: user.username, balance: user.balance };
-    save(STORAGE.currentUser, currentUser);
-    updateUI();
-    toast('مرحباً ' + username);
-    showPage('home');
+    if (pending) {
+      if (pending.password !== btoa(password)) return toast('كلمة المرور غير صحيحة', true);
+      pendingVerificationUser = pending;
+      toast('يرجى تفعيل حسابك عبر البريد الإلكتروني', true);
+      showVerificationRetry('تم إنشاء الحساب لكنه غير مفعل. أدخل رمز التفعيل أو أعد إرساله.', pending);
+      const box = document.getElementById('verificationCodeBox');
+      if (box) box.classList.remove('hidden');
+      return;
+    }
+
+    const newPendingUser = { username, email, password: btoa(password), balance: 0 };
+    try {
+      await sendVerificationEmail(newPendingUser);
+      const box = document.getElementById('verificationCodeBox');
+      if (box) box.classList.remove('hidden');
+      showVerificationRetry('تم إرسال رمز التفعيل إلى بريدك الإلكتروني. أدخل الرمز المكوّن من 6 أرقام لإكمال التسجيل.', newPendingUser);
+      toast('تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
+    } catch (error) {
+      console.error(error);
+      pendingVerificationUser = load(STORAGE.pendingUsers, []).find(u => u.username === username) || newPendingUser;
+      const box = document.getElementById('verificationCodeBox');
+      if (box) box.classList.remove('hidden');
+      showVerificationRetry('تعذر إرسال رمز التفعيل. تأكد من إعدادات قالب EmailJS ثم اضغط إعادة الإرسال.', pendingVerificationUser);
+      toast('تعذر إرسال البريد حالياً. راجع إعدادات EmailJS', true);
+    }
   };
 
   window.logout = function () {
@@ -778,6 +1017,8 @@
     const idx = users.findIndex(u => u.username === user.username);
     if (idx >= 0) {
       users[idx].balance = user.balance;
+      if (user.email) users[idx].email = user.email;
+      if (typeof user.isVerified === 'boolean') users[idx].isVerified = user.isVerified;
       save(STORAGE.users, users);
     }
     currentUser = user;
@@ -786,6 +1027,7 @@
 
   // ========== Wallet / TopUp ==========
   window.showTopUpModal = function () {
+    if (!requireVerifiedUser('استخدام المحفظة')) return;
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
@@ -801,6 +1043,7 @@
 
   window.submitTopUp = function (e) {
     e.preventDefault();
+    if (!requireVerifiedUser('استخدام المحفظة')) return;
     if (!currentUser) return;
 
     const txNumber = document.getElementById('txNumber').value.trim();
@@ -878,14 +1121,17 @@
     const totalTopup = topups.filter(t => t.status === 'approved').reduce((s, t) => s + Number(t.amount), 0);
     const totalSales = orders.reduce((s, o) => s + o.total, 0);
 
-    document.getElementById('statsGrid').innerHTML = `
-      <div class="stat-card"><h4>عدد المنتجات</h4><p>${products.length}</p></div>
-      <div class="stat-card"><h4>عدد الطلبات</h4><p>${orders.length}</p></div>
-      <div class="stat-card"><h4>طلبات الشحن</h4><p>${topups.length}</p></div>
-      <div class="stat-card"><h4>المستخدمين</h4><p>${users.length}</p></div>
-      <div class="stat-card"><h4>إجمالي المبيعات</h4><p>${formatPrice(totalSales)}</p></div>
-      <div class="stat-card"><h4>الرصيد المشحون</h4><p>${totalTopup}</p></div>
-    `;
+    const grid = document.getElementById('statsGrid');
+    if (grid) {
+      grid.innerHTML = `
+        <div class="stat-card"><h4>عدد المنتجات</h4><p>${products.length}</p></div>
+        <div class="stat-card"><h4>عدد الطلبات</h4><p>${orders.length}</p></div>
+        <div class="stat-card"><h4>طلبات الشحن</h4><p>${topups.length}</p></div>
+        <div class="stat-card"><h4>المستخدمين</h4><p>${users.length}</p></div>
+        <div class="stat-card"><h4>إجمالي المبيعات</h4><p>${formatPrice(totalSales)}</p></div>
+        <div class="stat-card"><h4>الرصيد المشحون</h4><p>${totalTopup}</p></div>
+      `;
+    }
   }
 
   // Categories admin
@@ -919,6 +1165,7 @@
   function renderAdminCategories() {
     const cats = load(STORAGE.categories, []).sort((a, b) => a.order - b.order);
     const tbody = document.querySelector('#catsTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = cats.map(c => `
       <tr>
         <td>${c.name}</td>
@@ -959,7 +1206,9 @@
   window.showAddProductForm = function () {
     const cats = load(STORAGE.categories, []);
     const sel = document.getElementById('prodCategory');
-    sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    if (sel) {
+      sel.innerHTML = cats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
     document.getElementById('addProductForm').classList.remove('hidden');
   };
   window.hideAddProductForm = function () {
@@ -1000,6 +1249,7 @@
     const products = load(STORAGE.products, []);
     const cats = load(STORAGE.categories, []);
     const tbody = document.querySelector('#prodsTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = products.map(p => {
       const cat = cats.find(c => c.id === p.categoryId);
       return `
@@ -1058,6 +1308,7 @@
   function renderAdminTopups() {
     const topups = load(STORAGE.topups, []).reverse();
     const tbody = document.querySelector('#topupsTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = topups.map(t => `
       <tr>
         <td>${t.username}</td>
@@ -1089,16 +1340,13 @@
     if (!t || t.status !== 'pending') return;
 
     t.status = 'approved';
-    // add balance
     const users = load(STORAGE.users, []);
     const u = users.find(x => x.username === t.username);
     if (u) {
-      // simple conversion: if SYP treat as is for demo, or convert roughly
       let add = Number(t.amount);
-      if (t.currency === 'SYP') add = Math.round(add / 10000); // demo rate ~10k SYP = 1$
+      if (t.currency === 'SYP') add = Math.round(add / 10000);
       u.balance = (u.balance || 0) + add;
       save(STORAGE.users, users);
-      // update current if same
       if (currentUser && currentUser.username === t.username) {
         currentUser.balance = u.balance;
         save(STORAGE.currentUser, currentUser);
@@ -1125,6 +1373,7 @@
   function renderAdminOrders() {
     const orders = load(STORAGE.orders, []).slice().reverse();
     const tbody = document.querySelector('#ordersTable tbody');
+    if (!tbody) return;
     tbody.innerHTML = orders.map(o => {
       const services = (o.items || []).map((i, idx) => `
         <div class="admin-order-mini">
@@ -1168,165 +1417,4 @@
           <div class="detail-full"><small>ملاحظات الخدمة</small><strong>${escapeHtml(i.notes||'لا توجد')}</strong></div>
         </div>
       </div>`).join('');
-    document.getElementById('orderDetailsTitle').textContent=`تفاصيل الطلب ${o.id}`;
-    document.getElementById('orderDetailsContent').innerHTML=`
-      <div class="detail-summary-grid">
-        <div><small>رقم الطلب</small><strong>${escapeHtml(o.id)}</strong></div>
-        <div><small>اسم المستخدم</small><strong>${escapeHtml(o.username||'—')}</strong></div>
-        <div><small>واتساب العميل</small><a href="https://wa.me/${String(o.whatsapp||'').replace(/\\D/g,'')}" target="_blank" rel="noopener">${escapeHtml(o.whatsapp||'—')}</a></div>
-        <div><small>تاريخ الطلب</small><strong>${new Date(o.createdAt).toLocaleString('ar')}</strong></div>
-        <div><small>مصدر الطلب</small><strong>${o.source==='quick_purchase'?'شراء مباشر':'السلة'}</strong></div>
-        <div><small>الحالة</small><strong>${statusBadge(o.status)}</strong></div>
-        <div class="detail-full"><small>ملاحظات العميل</small><strong>${escapeHtml(o.notes||'لا توجد')}</strong></div>
-      </div>
-      <h4 class="details-section-title">الخدمات المطلوبة</h4>${items}
-      <div class="details-grand-total"><span>الإجمالي المدفوع</span><strong>${formatPrice(o.total||0)}</strong></div>`;
-    document.getElementById('orderDetailsModal').classList.remove('hidden');
-  };
-
-  window.closeOrderDetails = function(){ document.getElementById('orderDetailsModal').classList.add('hidden'); };
-
-  window.completeOrder = function (id) {
-    const orders = load(STORAGE.orders, []);
-    const o = orders.find(x => x.id === id);
-    if (o) {
-      o.status = 'approved';
-      save(STORAGE.orders, orders);
-      renderAdminOrders();
-      toast('تم تحديث حالة الطلب');
-    }
-  };
-
-  // Users
-  function renderAdminUsers() {
-    const users = load(STORAGE.users, []);
-    const tbody = document.querySelector('#usersTable tbody');
-    tbody.innerHTML = users.map(u => `
-      <tr>
-        <td>${u.username}</td>
-        <td>${formatPrice(u.balance || 0)}</td>
-        <td>${new Date(u.createdAt).toLocaleDateString('ar')}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="3">لا يوجد مستخدمون</td></tr>';
-  }
-
-  window.addManualBalance = function () {
-    const username = document.getElementById('manualUser').value.trim();
-    const amount = Number(document.getElementById('manualAmount').value);
-    if (!username || amount < 1) return toast('بيانات غير صحيحة', true);
-
-    const users = load(STORAGE.users, []);
-    const u = users.find(x => x.username === username);
-    if (!u) return toast('المستخدم غير موجود', true);
-
-    u.balance = (u.balance || 0) + amount;
-    save(STORAGE.users, users);
-    if (currentUser && currentUser.username === username) {
-      currentUser.balance = u.balance;
-      save(STORAGE.currentUser, currentUser);
-      updateUI();
-    }
-    document.getElementById('manualUser').value = '';
-    document.getElementById('manualAmount').value = '';
-    renderAdminUsers();
-    toast('تم إضافة الرصيد');
-  };
-
-  // ========== Site Settings / Owner ==========
-  function renderAbout() {
-    const s = load(STORAGE.settings, DEFAULT_SETTINGS);
-    const photo = document.getElementById('ownerPhoto');
-    if (photo) photo.src = s.ownerPhoto || placeholderImg('MOOHAMED');
-    const name = document.getElementById('ownerName');
-    const bio = document.getElementById('ownerBio');
-    if (name) name.textContent = s.ownerName || ADMIN_DISPLAY_NAME;
-    if (bio) bio.textContent = s.ownerBio || DEFAULT_SETTINGS.ownerBio;
-    const links = [
-      ['ownerPhone', s.adminPhone, s.adminPhone ? 'tel:' + s.adminPhone : '#'],
-      ['ownerTelegram', s.telegram, s.telegram || '#'],
-      ['ownerChannel', s.channel, s.channel || '#']
-    ];
-    links.forEach(([id,label,href]) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.href = href;
-      const strong = el.querySelector('strong');
-      if (strong) strong.textContent = label || 'غير محدد';
-    });
-  }
-
-  function renderSiteSettings() {
-    const s = load(STORAGE.settings, DEFAULT_SETTINGS);
-    const vals = {
-      settingWalletImage:s.walletImage, settingAdminPhone:s.adminPhone, settingTelegram:s.telegram,
-      settingChannel:s.channel, settingOwnerPhoto:s.ownerPhoto, settingOwnerName:s.ownerName,
-      settingOwnerBio:s.ownerBio, settingLoaderLogo:s.loaderLogo, settingLoaderSeconds:s.loaderSeconds
-    };
-    Object.entries(vals).forEach(([id,val]) => { const el=document.getElementById(id); if(el) el.value=val ?? ''; });
-  }
-
-  window.saveSiteSettings = function() {
-    const s = {
-      walletImage: document.getElementById('settingWalletImage').value.trim(),
-      adminPhone: document.getElementById('settingAdminPhone').value.trim(),
-      telegram: document.getElementById('settingTelegram').value.trim(),
-      channel: document.getElementById('settingChannel').value.trim(),
-      ownerPhoto: document.getElementById('settingOwnerPhoto').value.trim(),
-      ownerName: document.getElementById('settingOwnerName').value.trim() || ADMIN_DISPLAY_NAME,
-      ownerBio: document.getElementById('settingOwnerBio').value.trim() || DEFAULT_SETTINGS.ownerBio,
-      loaderLogo: document.getElementById('settingLoaderLogo').value.trim(),
-      loaderSeconds: Math.min(10, Math.max(1, Number(document.getElementById('settingLoaderSeconds').value) || 2.5))
-    };
-    save(STORAGE.settings, s);
-    updateUI();
-    renderAbout();
-    applyLoaderBranding();
-    toast('تم حفظ إعدادات الموقع ✓');
-  };
-
-  function applyLoaderBranding() {
-    const s = load(STORAGE.settings, DEFAULT_SETTINGS);
-    const img = document.getElementById('loaderLogo');
-    if (img) img.src = s.loaderLogo || placeholderImg('IDLEB STORE');
-  }
-
-  function startLoader() {
-    applyLoaderBranding();
-    const s = load(STORAGE.settings, DEFAULT_SETTINGS);
-    const loader = document.getElementById('siteLoader');
-    if (!loader) return;
-    const duration = Math.min(10, Math.max(1, Number(s.loaderSeconds) || 2.5)) * 1000;
-    setTimeout(() => loader.classList.add('hidden'), duration);
-  }
-
-  // ========== Visual background intentionally static (3D removed) ==========
-  // ========== Mobile Menu ==========
-  document.getElementById('menuToggle').addEventListener('click', () => {
-    document.getElementById('navLinks').classList.toggle('open');
-  });
-
-  // ========== Hash Routing ==========
-  function handleHash() {
-    const hash = location.hash.slice(1) || 'home';
-    if (hash.startsWith('category/')) {
-      const id = hash.split('/')[1];
-      showPage('category', id);
-    } else if (hash === 'admin') {
-      showPage('admin');
-    } else {
-      showPage(hash);
-    }
-  }
-
-  // ========== Boot ==========
-  initData();
-  loadState();
-  handleHash();
-  window.addEventListener('hashchange', handleHash);
-
-  renderAbout();
-  startLoader();
-
-  // expose for debugging if needed
-  window.IDLEB = { load, save, STORAGE };
-})();
+    document.getElementById('orderDetail
