@@ -1228,3 +1228,45 @@ body {
   .service-choice { min-height: 105px; padding: 8px 6px; }
   .service-choice strong { font-size: .68rem; }
 }
+
+/* ===== Email Verification ===== */
+.verification-section { min-height: 62vh; display:flex; align-items:center; justify-content:center; }
+.verification-box {
+  width:min(560px,100%); text-align:center; padding:42px 28px; border:1px solid var(--border-light);
+  border-radius:24px; background:linear-gradient(145deg,var(--bg-card),var(--bg-elevated)); box-shadow:var(--shadow);
+}
+.verification-box h2 { margin:12px 0 8px; }
+.verification-box p { color:var(--text-muted); margin-bottom:20px; }
+.verification-icon {
+  width:74px;height:74px;margin:0 auto 10px;border-radius:50%;display:grid;place-items:center;
+  background:var(--primary-soft);color:var(--primary);font-size:2rem;font-weight:900;border:1px solid var(--border-light);
+}
+.verification-icon.success { color:var(--success); background:rgba(16,185,129,.12); }
+.verification-icon.error { color:var(--danger); background:rgba(225,29,72,.12); }
+.verification-retry { margin-top:16px; padding:14px; border:1px solid var(--border); border-radius:14px; background:var(--bg-soft); }
+.verification-retry p { margin:0 0 10px; color:var(--text-muted); font-size:.84rem; }
+.settings-divider { width:100%; border:0; border-top:1px solid var(--border); margin:14px 0 4px; }
+.settings-help { color:var(--text-muted); font-size:.78rem; line-height:1.7; margin:0 0 4px; }
+@media(max-width:720px){
+  .verification-box { padding:30px 17px; border-radius:18px; }
+  .verification-box h2 { font-size:1.2rem; }
+}
+
+
+/* Email OTP verification */
+.verification-code-input {
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  direction: ltr;
+  letter-spacing: .45em;
+  font-size: 1.5rem;
+  font-weight: 800;
+  padding: 14px 12px;
+  border: 1px solid rgba(108,60,225,.28);
+  border-radius: 14px;
+  outline: none;
+  margin: 10px 0;
+}
+.verification-code-input:focus { box-shadow: 0 0 0 3px rgba(0,212,255,.12); border-color: #6C3CE1; }
+.muted { opacity: .72; }
