@@ -188,7 +188,6 @@
     var expiry = 24;
     var expiresAt = new Date(Date.now() + expiry * 60 * 60 * 1000).toISOString();
 
-    // Save pending user
     var pending = load(KEYS.pendingUsers, []);
     var existing = null;
     for (var i = 0; i < pending.length; i++) {
@@ -217,12 +216,10 @@
     save(KEYS.pendingUsers, pending);
     pendingVerificationUser = record;
 
-    // Init EmailJS
     if (!initEmailJS()) {
       throw new Error('EmailJS init failed');
     }
 
-    // Send email
     var params = {
       to_email: user.email,
       email: user.email,
@@ -247,10 +244,24 @@
     return { code: code, expiresAt: expiresAt };
   };
 
+  // ========== VERIFY OTP ==========
   window.verifyOTP = function() {
-    var code = document.getElementById('verificationCodeInput').value.trim();
-    var email = document.getElementById('authEmail').value.trim().toLowerCase();
-    var username = document.getElementById('authUsername').value.trim();
+    console.log('🔐 verifyOTP called');
+    
+    var codeInput = document.getElementById('verificationCodeInput');
+    var emailInput = document.getElementById('authEmail');
+    var usernameInput = document.getElementById('authUsername');
+    
+    if (!codeInput || !emailInput || !usernameInput) {
+      toast('حدث خطأ في الصفحة', true);
+      return;
+    }
+    
+    var code = codeInput.value.trim();
+    var email = emailInput.value.trim().toLowerCase();
+    var username = usernameInput.value.trim();
+
+    console.log('📝 Verifying - Code:', code, 'Email:', email, 'Username:', username);
 
     if (!code || code.length !== 6) {
       toast('أدخل رمز التفعيل المكوّن من 6 أرقام', true);
@@ -258,6 +269,8 @@
     }
 
     var pending = load(KEYS.pendingUsers, []);
+    console.log('📋 Pending users:', pending);
+    
     var user = null;
     var idx = -1;
 
@@ -274,19 +287,19 @@
       return;
     }
 
-    // Check expiry
+    console.log('👤 Found pending user:', user);
+    console.log('🔑 Stored code:', user.verification_code, 'Entered code:', code);
+
     if (user.expiresAt && Date.now() > new Date(user.expiresAt).getTime()) {
       toast('انتهت صلاحية الرمز، يرجى طلب رمز جديد', true);
       return;
     }
 
-    // Check code
     if (String(user.verification_code) !== String(code)) {
-      toast('رمز التفعيل غير صحيح', true);
+      toast('❌ رمز التفعيل غير صحيح', true);
       return;
     }
 
-    // Move to verified users
     var users = load(KEYS.users, []);
     var newUser = {
       username: user.username,
@@ -295,10 +308,9 @@
       balance: 0,
       isVerified: true,
       verifiedAt: new Date().toISOString(),
-      createdAt: user.createdAt
+      createdAt: user.createdAt || new Date().toISOString()
     };
 
-    // Check if already exists
     var exists = false;
     for (var i = 0; i < users.length; i++) {
       if (users[i].username === user.username || users[i].email === user.email) {
@@ -311,26 +323,46 @@
 
     save(KEYS.users, users);
     
-    // Remove from pending
     pending.splice(idx, 1);
     save(KEYS.pendingUsers, pending);
 
-    // Hide verification box
-    document.getElementById('verificationCodeBox').classList.add('hidden');
-    document.getElementById('verificationRetryBox').classList.add('hidden');
+    var codeBox = document.getElementById('verificationCodeBox');
+    var retryBox = document.getElementById('verificationRetryBox');
+    if (codeBox) codeBox.classList.add('hidden');
+    if (retryBox) retryBox.classList.add('hidden');
 
-    toast('✅ تم تفعيل حسابك بنجاح! يمكنك تسجيل الدخول الآن');
+    toast('✅ تم تفعيل حسابك بنجاح!');
     
-    // Auto login
     currentUser = { username: user.username, email: user.email, balance: 0 };
     save(KEYS.currentUser, currentUser);
     updateUI();
-    showPage('home');
+    
+    setTimeout(function() {
+      showPage('home');
+    }, 500);
   };
 
+  // ========== RESEND VERIFICATION ==========
   window.resendVerification = async function() {
-    var email = document.getElementById('authEmail').value.trim().toLowerCase();
-    var username = document.getElementById('authUsername').value.trim();
+    console.log('🔄 resendVerification called');
+    
+    var emailInput = document.getElementById('authEmail');
+    var usernameInput = document.getElementById('authUsername');
+    
+    if (!emailInput || !usernameInput) {
+      toast('حدث خطأ في الصفحة', true);
+      return;
+    }
+    
+    var email = emailInput.value.trim().toLowerCase();
+    var username = usernameInput.value.trim();
+
+    console.log('📝 Resend - Email:', email, 'Username:', username);
+
+    if (!email && !username) {
+      toast('أدخل البريد الإلكتروني أو اسم المستخدم', true);
+      return;
+    }
 
     var pending = load(KEYS.pendingUsers, []);
     var user = null;
@@ -347,17 +379,25 @@
     }
 
     try {
-      toast('جاري إرسال رمز جديد...');
+      toast('📧 جاري إرسال رمز جديد...');
       await window.sendVerificationEmail(user);
-      toast('تم إرسال رمز جديد إلى بريدك الإلكتروني');
+      
+      var retryMessage = document.getElementById('verificationRetryMessage');
+      if (retryMessage) {
+        retryMessage.textContent = '✅ تم إرسال رمز جديد إلى ' + user.email;
+      }
+      
+      toast('✅ تم إرسال رمز جديد إلى بريدك الإلكتروني');
     } catch(e) {
-      console.error(e);
-      toast('فشل إرسال البريد: ' + e.message, true);
+      console.error('❌ Resend error:', e);
+      toast('❌ فشل إرسال البريد: ' + e.message, true);
     }
   };
 
   // ========== NAVIGATION ==========
   window.showPage = function(pageId, param) {
+    console.log('📍 Navigating to:', pageId, param);
+    
     var pages = document.querySelectorAll('.page');
     for (var i = 0; i < pages.length; i++) {
       pages[i].classList.remove('active');
@@ -387,6 +427,8 @@
 
     if (pageId === 'category' && param) {
       history.replaceState(null, '', '#category/' + param);
+    } else if (pageId === 'product-detail' && param) {
+      history.replaceState(null, '', '#product/' + param);
     } else if (pageId !== 'home') {
       history.replaceState(null, '', '#' + pageId);
     } else {
@@ -398,6 +440,8 @@
 
   // ========== RENDER HOME ==========
   function renderHome() {
+    console.log('🏠 Rendering home...');
+    
     var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var allProds = load(KEYS.products, []);
     var prods = [];
@@ -412,9 +456,9 @@
       var html = '';
       for (var i = 0; i < cats.length; i++) {
         var c = cats[i];
-        html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
-        html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '">';
-        html += '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
+        html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')" style="cursor:pointer;">';
+        html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" style="width:100%; height:150px; object-fit:cover;">';
+        html += '<div class="card-body" style="padding:12px;"><h3 style="margin:0; text-align:center;">' + c.name + '</h3></div></div>';
       }
       catGrid.innerHTML = html;
     }
@@ -429,20 +473,23 @@
     }
   }
 
+  // ========== PRODUCT CARD HTML ==========
   function productCardHTML(p) {
-    return '<div class="product-card product-card-simple">' +
-      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '">' +
-      '<div class="card-body">' +
-      '<span class="product-type">' + typeLabel(p.type) + '</span>' +
-      '<h3>' + p.name + '</h3>' +
-      '<p>' + (p.desc || '') + '</p>' +
-      '<div class="product-price">' + formatPrice(p.price) + '</div>' +
-      '<button class="btn btn-primary btn-full" onclick="openProductDetail(\'' + p.id + '\')">عرض التفاصيل</button>' +
+    return '<div class="product-card" style="cursor:pointer; background:#14131a; border-radius:14px; border:1px solid #2a2735; overflow:hidden; transition:0.2s; hover:border-color:#8b5cf6;">' +
+      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '" style="width:100%; height:150px; object-fit:cover; background:#1c1b24;">' +
+      '<div class="card-body" style="padding:12px;">' +
+      '<span class="product-type" style="display:inline-block; background:rgba(139,92,246,0.12); color:#8b5cf6; padding:2px 10px; border-radius:6px; font-size:0.65rem;">' + typeLabel(p.type) + '</span>' +
+      '<h3 style="margin:6px 0 2px; font-size:0.95rem; color:#f4f2f8;">' + p.name + '</h3>' +
+      '<p style="color:#9b96a8; font-size:0.8rem; margin:0 0 8px;">' + (p.desc || '') + '</p>' +
+      '<div class="product-price" style="font-size:1rem; font-weight:700; color:#8b5cf6; margin-bottom:8px;">' + formatPrice(p.price) + '</div>' +
+      '<button class="btn btn-primary btn-full" onclick="event.stopPropagation(); openProductDetail(\'' + p.id + '\')" style="width:100%; padding:8px; font-size:0.8rem; border-radius:8px; background:#8b5cf6; color:#fff; border:none; cursor:pointer;">📦 عرض التفاصيل</button>' +
       '</div></div>';
   }
 
   // ========== CATEGORIES ==========
   function renderCategories() {
+    console.log('📂 Rendering categories...');
+    
     var cats = load(KEYS.categories, []).sort(function(a, b) { return a.order - b.order; });
     var grid = document.getElementById('allCategories');
     if (!grid) return;
@@ -450,14 +497,17 @@
     var html = '';
     for (var i = 0; i < cats.length; i++) {
       var c = cats[i];
-      html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')">';
-      html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '">';
-      html += '<div class="card-body"><h3>' + c.name + '</h3></div></div>';
+      html += '<div class="category-card" onclick="showPage(\'category\', \'' + c.id + '\')" style="cursor:pointer; background:#14131a; border-radius:14px; border:1px solid #2a2735; overflow:hidden; transition:0.2s;">';
+      html += '<img src="' + (c.image || placeholderImg(c.name)) + '" alt="' + c.name + '" style="width:100%; height:150px; object-fit:cover;">';
+      html += '<div class="card-body" style="padding:12px;"><h3 style="margin:0; text-align:center; color:#f4f2f8;">' + c.name + '</h3></div></div>';
     }
     grid.innerHTML = html;
   }
 
+  // ========== CATEGORY PRODUCTS ==========
   function renderCategoryProducts(catId) {
+    console.log('📦 Rendering category products:', catId);
+    
     var cats = load(KEYS.categories, []);
     var cat = null;
     for (var i = 0; i < cats.length; i++) {
@@ -479,7 +529,7 @@
     if (!grid) return;
 
     if (prods.length === 0) {
-      grid.innerHTML = '<p class="empty-state">لا توجد منتجات في هذا القسم</p>';
+      grid.innerHTML = '<p class="empty-state" style="text-align:center; padding:40px; color:#9b96a8;">لا توجد منتجات في هذا القسم</p>';
       return;
     }
 
@@ -492,6 +542,8 @@
 
   // ========== PRODUCT DETAIL ==========
   window.openProductDetail = function(productId) {
+    console.log('🛒 Opening product detail:', productId);
+    
     var allProds = load(KEYS.products, []);
     var p = null;
     for (var i = 0; i < allProds.length; i++) {
@@ -500,28 +552,40 @@
         break;
       }
     }
-    if (!p) return;
+    
+    if (!p) {
+      toast('المنتج غير موجود', true);
+      return;
+    }
     
     var content = document.getElementById('productDetailContent');
-    if (!content) return;
+    if (!content) {
+      console.error('❌ productDetailContent not found');
+      return;
+    }
     
     content.innerHTML = 
-      '<div class="detail-hero-card product-detail-head">' +
-      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '">' +
-      '<div><span class="eyebrow">' + typeLabel(p.type) + '</span>' +
-      '<h1>' + p.name + '</h1>' +
-      '<p>' + (p.desc || '') + '</p>' +
-      '<div class="product-price">' + formatPrice(p.price) + '</div>' +
-      (p.pricingNote ? '<div class="pricing-note">' + p.pricingNote + '</div>' : '') +
+      '<div class="detail-hero-card" style="display:flex; gap:20px; padding:24px; background:#14131a; border-radius:14px; border:1px solid #2a2735; margin-bottom:20px; flex-wrap:wrap;">' +
+      '<img src="' + (p.image || placeholderImg(p.name)) + '" alt="' + p.name + '" style="width:120px; height:120px; border-radius:14px; object-fit:cover; background:#1c1b24;">' +
+      '<div style="flex:1; min-width:200px;">' +
+      '<span class="product-type" style="display:inline-block; background:rgba(139,92,246,0.12); color:#8b5cf6; padding:2px 12px; border-radius:6px; font-size:0.75rem;">' + typeLabel(p.type) + '</span>' +
+      '<h1 style="margin:8px 0 4px; color:#f4f2f8; font-size:1.6rem;">' + p.name + '</h1>' +
+      '<p style="color:#9b96a8; margin:0 0 10px;">' + (p.desc || '') + '</p>' +
+      '<div class="product-price" style="font-size:1.4rem; font-weight:700; color:#8b5cf6;">' + formatPrice(p.price) + '</div>' +
+      (p.pricingNote ? '<div class="pricing-note" style="padding:8px 12px; background:rgba(139,92,246,0.08); border-radius:8px; margin-top:8px; color:#c4b5fd; font-size:0.85rem;">' + p.pricingNote + '</div>' : '') +
       '</div></div>' +
-      '<button class="btn btn-primary btn-lg" onclick="addToCart(\'' + p.id + '\')">أضف إلى السلة</button>' +
-      '<button class="btn btn-secondary btn-lg" onclick="openQuickOrder(\'' + p.id + '\')">شراء مباشر</button>';
+      '<div style="display:flex; gap:12px; flex-wrap:wrap;">' +
+      '<button class="btn btn-primary" onclick="addToCart(\'' + p.id + '\')" style="flex:1; padding:12px 24px; background:#8b5cf6; color:#fff; border:none; border-radius:10px; font-size:1rem; cursor:pointer;">🛒 أضف إلى السلة</button>' +
+      '<button class="btn btn-secondary" onclick="openQuickOrder(\'' + p.id + '\')" style="flex:1; padding:12px 24px; background:#1c1b24; color:#f4f2f8; border:1px solid #2a2735; border-radius:10px; font-size:1rem; cursor:pointer;">⚡ شراء مباشر</button>' +
+      '</div>';
     
     showPage('product-detail', productId);
   };
 
   // ========== CART ==========
   window.addToCart = function(productId) {
+    console.log('🛒 Adding to cart:', productId);
+    
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
@@ -536,7 +600,10 @@
         break;
       }
     }
-    if (!p) return;
+    if (!p) {
+      toast('المنتج غير موجود', true);
+      return;
+    }
 
     var existing = null;
     for (var i = 0; i < cart.length; i++) {
@@ -563,10 +630,12 @@
 
     save(KEYS.cart, cart);
     updateUI();
-    toast('تمت الإضافة إلى السلة ✓');
+    toast('✅ تمت الإضافة إلى السلة');
   };
 
   function renderCart() {
+    console.log('🛒 Rendering cart...');
+    
     var empty = document.getElementById('cartEmpty');
     var content = document.getElementById('cartContent');
     
@@ -586,17 +655,17 @@
       for (var i = 0; i < cart.length; i++) {
         var item = cart[i];
         total += Number(item.lineTotal || item.price * item.qty);
-        html += '<div class="cart-item">';
-        html += '<img src="' + (item.image || placeholderImg(item.name)) + '" alt="">';
-        html += '<div class="cart-item-info">';
-        html += '<h4>' + item.name + '</h4>';
-        html += '<div class="product-price">' + formatPrice(item.lineTotal || item.price * item.qty) + '</div>';
+        html += '<div class="cart-item" style="display:flex; gap:12px; background:#14131a; border:1px solid #2a2735; border-radius:10px; padding:12px; margin-bottom:8px; align-items:center; flex-wrap:wrap;">';
+        html += '<img src="' + (item.image || placeholderImg(item.name)) + '" alt="' + item.name + '" style="width:60px; height:60px; border-radius:8px; object-fit:cover;">';
+        html += '<div class="cart-item-info" style="flex:1; min-width:120px;">';
+        html += '<h4 style="margin:0; font-size:0.9rem; color:#f4f2f8;">' + item.name + '</h4>';
+        html += '<div class="product-price" style="font-size:0.9rem; font-weight:700; color:#8b5cf6;">' + formatPrice(item.lineTotal || item.price * item.qty) + '</div>';
         html += '</div>';
-        html += '<div class="cart-item-actions">';
-        html += '<button class="qty-btn" onclick="changeQty(' + i + ', -1)">−</button>';
-        html += '<span>' + item.qty + '</span>';
-        html += '<button class="qty-btn" onclick="changeQty(' + i + ', 1)">+</button>';
-        html += '<button class="btn btn-danger btn-sm" onclick="removeFromCart(' + i + ')">حذف</button>';
+        html += '<div class="cart-item-actions" style="display:flex; gap:6px; align-items:center;">';
+        html += '<button class="qty-btn" onclick="changeQty(' + i + ', -1)" style="width:30px; height:30px; border-radius:6px; border:1px solid #2a2735; background:#1c1b24; color:#f4f2f8; cursor:pointer;">−</button>';
+        html += '<span style="min-width:24px; text-align:center;">' + item.qty + '</span>';
+        html += '<button class="qty-btn" onclick="changeQty(' + i + ', 1)" style="width:30px; height:30px; border-radius:6px; border:1px solid #2a2735; background:#1c1b24; color:#f4f2f8; cursor:pointer;">+</button>';
+        html += '<button class="btn btn-danger btn-sm" onclick="removeFromCart(' + i + ')" style="padding:4px 10px; background:transparent; border:1px solid #9f1239; color:#9f1239; border-radius:6px; cursor:pointer;">حذف</button>';
         html += '</div></div>';
       }
       itemsEl.innerHTML = html;
@@ -629,6 +698,8 @@
 
   // ========== QUICK ORDER ==========
   window.openQuickOrder = function(productId) {
+    console.log('⚡ Opening quick order:', productId);
+    
     if (!currentUser) {
       toast('يجب تسجيل الدخول أولاً', true);
       showPage('login');
@@ -643,21 +714,27 @@
         break;
       }
     }
-    if (!p) return;
+    if (!p) {
+      toast('المنتج غير موجود', true);
+      return;
+    }
     
     var modal = document.getElementById('quickOrderModal');
-    if (!modal) return;
+    if (!modal) {
+      toast('حدث خطأ في النافذة', true);
+      return;
+    }
     
     document.getElementById('quickOrderTitle').textContent = p.name;
     document.getElementById('quickOrderSummary').textContent = p.pricingNote || p.desc || 'أدخل البيانات المطلوبة';
     document.getElementById('quickOrderTotal').textContent = formatPrice(p.price);
     document.getElementById('quickOrderForm').innerHTML = 
       '<div class="form-group"><label>رقم واتساب العميل <span class="required">*</span></label>' +
-      '<input type="tel" id="quickWhatsapp" placeholder="مثال: +9639xxxxxxxx" required></div>' +
+      '<input type="tel" id="quickWhatsapp" placeholder="مثال: +9639xxxxxxxx" required style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a2735; background:#1c1b24; color:#f4f2f8;"></div>' +
       '<div class="form-group"><label>رابط الحساب <span class="required">*</span></label>' +
-      '<input type="url" id="quickTarget" placeholder="https://instagram.com/..." required></div>' +
+      '<input type="url" id="quickTarget" placeholder="https://instagram.com/..." required style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a2735; background:#1c1b24; color:#f4f2f8;"></div>' +
       '<div class="form-group"><label>ملاحظات إضافية</label>' +
-      '<textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن"></textarea></div>' +
+      '<textarea id="quickNotes" rows="3" placeholder="أي ملاحظة للإدمن" style="width:100%; padding:10px; border-radius:8px; border:1px solid #2a2735; background:#1c1b24; color:#f4f2f8;"></textarea></div>' +
       '<input type="hidden" id="quickProductId" value="' + p.id + '">';
     
     modal.classList.remove('hidden');
@@ -786,7 +863,6 @@
     orders.push(order);
     save(KEYS.orders, orders);
     
-    // Increase sales
     var products = load(KEYS.products, []);
     for (var i = 0; i < cart.length; i++) {
       for (var j = 0; j < products.length; j++) {
@@ -835,11 +911,12 @@
     var password = document.getElementById('authPassword').value;
     var passwordConfirm = document.getElementById('authPasswordConfirm').value;
     
-    // Hide old verification boxes
-    document.getElementById('verificationCodeBox').classList.add('hidden');
-    document.getElementById('verificationRetryBox').classList.add('hidden');
+    var codeBox = document.getElementById('verificationCodeBox');
+    var retryBox = document.getElementById('verificationRetryBox');
+    if (codeBox) codeBox.classList.add('hidden');
+    if (retryBox) retryBox.classList.add('hidden');
     
-    // ✅ ADMIN LOGIN - بدون بريد ولا OTP
+    // ✅ ADMIN LOGIN
     if (username === ADMIN_USER && password === ADMIN_PASS) {
       adminLoggedIn = true;
       sessionStorage.setItem(KEYS.adminSession, '1');
@@ -848,13 +925,11 @@
       return;
     }
     
-    // Validation
     if (!username) { toast('اسم المستخدم مطلوب', true); return; }
     if (!email) { toast('البريد الإلكتروني مطلوب', true); return; }
     if (password.length < 4) { toast('كلمة المرور 4 أحرف على الأقل', true); return; }
     if (password !== passwordConfirm) { toast('كلمتا المرور غير متطابقتين', true); return; }
     
-    // Check if user exists in verified users
     var users = load(KEYS.users, []);
     var user = null;
     for (var i = 0; i < users.length; i++) {
@@ -864,13 +939,11 @@
       }
     }
     
-    // If user exists in verified users
     if (user) {
       if (user.password !== password) {
         toast('كلمة المرور غير صحيحة', true);
         return;
       }
-      // Login
       currentUser = { username: user.username, email: user.email, balance: user.balance || 0 };
       save(KEYS.currentUser, currentUser);
       updateUI();
@@ -879,7 +952,6 @@
       return;
     }
     
-    // Check if user is pending (waiting for verification)
     var pending = load(KEYS.pendingUsers, []);
     var pendingUser = null;
     for (var i = 0; i < pending.length; i++) {
@@ -894,17 +966,19 @@
         toast('كلمة المرور غير صحيحة', true);
         return;
       }
-      // Show verification box
       pendingVerificationUser = pendingUser;
-      document.getElementById('verificationCodeBox').classList.remove('hidden');
-      document.getElementById('verificationRetryBox').classList.remove('hidden');
-      document.getElementById('verificationRetryMessage').textContent = 
-        'تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
-      toast('أدخل رمز التفعيل المرسل إلى بريدك الإلكتروني');
+      if (codeBox) codeBox.classList.remove('hidden');
+      if (retryBox) retryBox.classList.remove('hidden');
+      
+      var retryMessage = document.getElementById('verificationRetryMessage');
+      if (retryMessage) {
+        retryMessage.textContent = '📧 تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
+      }
+      
+      toast('📧 أدخل رمز التفعيل المرسل إلى بريدك الإلكتروني');
       return;
     }
     
-    // NEW USER - create pending and send OTP
     var newUser = {
       username: username,
       email: email,
@@ -912,14 +986,17 @@
     };
     
     try {
-      toast('جاري إرسال رمز التفعيل...');
+      toast('📧 جاري إرسال رمز التفعيل...');
       await window.sendVerificationEmail(newUser);
       
-      // Show verification box
-      document.getElementById('verificationCodeBox').classList.remove('hidden');
-      document.getElementById('verificationRetryBox').classList.remove('hidden');
-      document.getElementById('verificationRetryMessage').textContent = 
-        'تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
+      if (codeBox) codeBox.classList.remove('hidden');
+      if (retryBox) retryBox.classList.remove('hidden');
+      
+      var retryMessage2 = document.getElementById('verificationRetryMessage');
+      if (retryMessage2) {
+        retryMessage2.textContent = '✅ تم إرسال رمز التفعيل إلى ' + email + '. أدخل الرمز المكوّن من 6 أرقام.';
+      }
+      
       toast('✅ تم إرسال رمز التفعيل إلى بريدك الإلكتروني');
     } catch(e) {
       console.error('Send error:', e);
@@ -1272,9 +1349,14 @@
   // ========== HASH ROUTING ==========
   function handleHash() {
     var hash = location.hash.slice(1) || 'home';
+    console.log('📍 Hash changed:', hash);
+    
     if (hash.startsWith('category/')) {
       var id = hash.split('/')[1];
       showPage('category', id);
+    } else if (hash.startsWith('product/')) {
+      var id = hash.split('/')[1];
+      showPage('product-detail', id);
     } else if (hash === 'admin') {
       showPage('admin');
     } else {
@@ -1291,6 +1373,8 @@
         if (links) links.classList.toggle('open');
       });
     }
+    
+    console.log('✅ DOM fully loaded');
   });
 
   // ========== BOOT ==========
@@ -1303,4 +1387,11 @@
   startLoader();
 
   console.log('✅ IDLEB STORE ready!');
+  console.log('🔍 Available functions:');
+  console.log('  - openProductDetail:', typeof window.openProductDetail);
+  console.log('  - addToCart:', typeof window.addToCart);
+  console.log('  - openQuickOrder:', typeof window.openQuickOrder);
+  console.log('  - showPage:', typeof window.showPage);
+  console.log('  - verifyOTP:', typeof window.verifyOTP);
+  console.log('  - resendVerification:', typeof window.resendVerification);
 })();
